@@ -30,12 +30,14 @@ const Dashboard = () => {
     return null;
   }
 
+  // Generate dummy journey cards
+  const journeyCards = Array.from({ length: 30 }, (_, i) => i + 1);
+
   return (
     <div className="min-h-screen bg-yoga-100">
       <header className="w-full bg-white shadow-sm py-4 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto flex justify-center items-center">
           <Logo />
-          <Button variant="outline">My Account</Button>
         </div>
       </header>
 
@@ -79,28 +81,33 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold mb-4">Progress Stats</h2>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-muted-foreground">Total Sessions</p>
+                <p className="text-sm text-muted-foreground">Total Poses Practiced</p>
                 <p className="font-medium">0</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">This Week</p>
-                <p className="font-medium">0 / {practiceDays.length}</p>
+                <p className="text-sm text-muted-foreground">Total Days of Yoga</p>
+                <p className="font-medium">0</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Streak</p>
-                <p className="font-medium">0 days</p>
+                <p className="text-sm text-muted-foreground">Total Practice Time</p>
+                <p className="font-medium">0 minutes</p>
               </div>
             </div>
           </Card>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Upcoming Sessions</h2>
-            <p className="text-muted-foreground">
-              Complete your first session to see your upcoming schedule.
-            </p>
-          </Card>
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Yoga Journey</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {journeyCards.map((day) => (
+              <Card key={day} className="p-4">
+                <h3 className="font-medium text-center">Day {day}</h3>
+                <p className="text-sm text-muted-foreground text-center mt-2">
+                  {day <= 1 ? "Ready to start" : "Coming soon"}
+                </p>
+              </Card>
+            ))}
+          </div>
         </div>
       </main>
     </div>

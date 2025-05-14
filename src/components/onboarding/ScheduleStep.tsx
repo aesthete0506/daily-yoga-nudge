@@ -7,13 +7,13 @@ const ScheduleStep = () => {
   const { practiceDays, togglePracticeDay, setCurrentStep } = useYoga();
   
   const days: { label: string; value: WeekDay }[] = [
-    { label: "Monday", value: "monday" },
-    { label: "Tuesday", value: "tuesday" },
-    { label: "Wednesday", value: "wednesday" },
-    { label: "Thursday", value: "thursday" },
-    { label: "Friday", value: "friday" },
-    { label: "Saturday", value: "saturday" },
-    { label: "Sunday", value: "sunday" },
+    { label: "Mon", value: "monday" },
+    { label: "Tue", value: "tuesday" },
+    { label: "Wed", value: "wednesday" },
+    { label: "Thur", value: "thursday" },
+    { label: "Fri", value: "friday" },
+    { label: "Sat", value: "saturday" },
+    { label: "Sun", value: "sunday" },
   ];
 
   const handleContinue = () => {
