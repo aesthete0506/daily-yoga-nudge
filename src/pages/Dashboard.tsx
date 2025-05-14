@@ -10,7 +10,7 @@ import PracticePlanDialog from "@/components/PracticePlanDialog";
 import DayPlanDialog from "@/components/DayPlanDialog";
 
 const Dashboard = () => {
-  const { experienceLevel, sessionDuration, practiceDays, reminderTime } = useYoga();
+  const { experienceLevel, sessionDuration, practiceDays, reminderTime, completedDays, totalPosesPracticed, totalPracticeTime } = useYoga();
   const navigate = useNavigate();
   const [practicePlanOpen, setPracticePlanOpen] = useState(false);
   const [dayPlanOpen, setDayPlanOpen] = useState(false);
@@ -21,8 +21,18 @@ const Dashboard = () => {
     return null;
   }
 
-  // Generate dummy journey cards
+  // Generate journey cards
   const journeyCards = Array.from({ length: 30 }, (_, i) => i + 1);
+
+  // Format practice time
+  const formatPracticeTime = (minutes: number) => {
+    if (minutes < 1) {
+      const seconds = Math.round(minutes * 60);
+      return `${seconds} seconds`;
+    } else {
+      return `${minutes} minutes`;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-yoga-100">
@@ -47,15 +57,15 @@ const Dashboard = () => {
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-muted-foreground">Total Poses Practiced</p>
-                <p className="font-medium">0</p>
+                <p className="font-medium">{totalPosesPracticed}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Days of Yoga</p>
-                <p className="font-medium">0</p>
+                <p className="font-medium">{completedDays.length}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Practice Time</p>
-                <p className="font-medium">0 minutes</p>
+                <p className="font-medium">{formatPracticeTime(totalPracticeTime)}</p>
               </div>
             </div>
           </Card>
@@ -79,10 +89,18 @@ const Dashboard = () => {
           <h2 className="text-xl font-semibold mb-4">Yoga Journey</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {journeyCards.map((day) => (
-              <Card key={day} className="p-4">
+              <Card 
+                key={day} 
+                className={`p-4 ${completedDays.includes(day) ? 'bg-green-100' : ''}`}
+              >
                 <h3 className="font-medium text-center">Day {day}</h3>
                 <p className="text-sm text-muted-foreground text-center mt-2">
-                  {day <= 1 ? "Ready to start" : "Coming soon"}
+                  {completedDays.includes(day) 
+                    ? "Completed" 
+                    : day === completedDays.length + 1 
+                      ? "Ready to start" 
+                      : "Coming soon"
+                  }
                 </p>
               </Card>
             ))}
@@ -97,8 +115,7 @@ const Dashboard = () => {
       />
       <DayPlanDialog 
         open={dayPlanOpen} 
-        onOpenChange={setDayPlanOpen} 
-        dayNumber={1} 
+        onOpenChange={setDayPlanOpen}
       />
     </div>
   );

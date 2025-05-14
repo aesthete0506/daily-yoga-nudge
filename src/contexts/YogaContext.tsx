@@ -16,6 +16,12 @@ interface YogaContextType {
   setReminderTime: (time: string) => void;
   currentStep: number;
   setCurrentStep: (step: number) => void;
+  // Added progress tracking
+  completedDays: number[];
+  totalPosesPracticed: number;
+  totalPracticeTime: number;
+  completeDay: (day: number, poses: number, time: number) => void;
+  getCurrentDay: () => number;
 }
 
 const YogaContext = createContext<YogaContextType | undefined>(undefined);
@@ -26,6 +32,11 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [practiceDays, setPracticeDays] = useState<WeekDay[]>([]);
   const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  
+  // Added progress tracking state
+  const [completedDays, setCompletedDays] = useState<number[]>([]);
+  const [totalPosesPracticed, setTotalPosesPracticed] = useState(0);
+  const [totalPracticeTime, setTotalPracticeTime] = useState(0);
 
   const togglePracticeDay = (day: WeekDay) => {
     setPracticeDays(prev => 
@@ -33,6 +44,21 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ? prev.filter(d => d !== day)
         : [...prev, day]
     );
+  };
+
+  // Function to complete a day and update stats
+  const completeDay = (day: number, poses: number, time: number) => {
+    if (!completedDays.includes(day)) {
+      setCompletedDays(prev => [...prev, day]);
+      setTotalPosesPracticed(prev => prev + poses);
+      setTotalPracticeTime(prev => prev + time);
+    }
+  };
+
+  // Get the current day (next day after last completed day or 1 if none completed)
+  const getCurrentDay = () => {
+    if (completedDays.length === 0) return 1;
+    return Math.max(...completedDays) + 1;
   };
 
   return (
@@ -46,7 +72,12 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       togglePracticeDay,
       setReminderTime,
       currentStep,
-      setCurrentStep
+      setCurrentStep,
+      completedDays,
+      totalPosesPracticed,
+      totalPracticeTime,
+      completeDay,
+      getCurrentDay
     }}>
       {children}
     </YogaContext.Provider>

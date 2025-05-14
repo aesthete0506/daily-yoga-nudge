@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useYoga } from "@/contexts/YogaContext";
 import { useState } from "react";
@@ -14,12 +15,14 @@ import AsanaPractice from "./AsanaPractice";
 interface DayPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  dayNumber: number;
 }
 
-const DayPlanDialog = ({ open, onOpenChange, dayNumber }: DayPlanDialogProps) => {
+const DayPlanDialog = ({ open, onOpenChange }: DayPlanDialogProps) => {
   const [startPractice, setStartPractice] = useState(false);
-  const { sessionDuration } = useYoga();
+  const { sessionDuration, getCurrentDay } = useYoga();
+  
+  // Get the current day from context
+  const dayNumber = getCurrentDay();
 
   // Sample day plan data - in a real app, this would come from an API or database
   const dayPlan = {
@@ -51,6 +54,7 @@ const DayPlanDialog = ({ open, onOpenChange, dayNumber }: DayPlanDialogProps) =>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Day {dayNumber} Practice</DialogTitle>
+          <DialogDescription>Your personalized practice for today</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">

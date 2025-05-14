@@ -6,12 +6,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Progress } from "@/components/ui/progress";
 import { Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useYoga } from "@/contexts/YogaContext";
 
 interface Asana {
   name: string;
@@ -28,10 +30,11 @@ interface AsanaPracticeProps {
 const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeProps) => {
   const [currentAsanaIndex, setCurrentAsanaIndex] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(120); // 2 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(2); // 2 seconds for testing
   const [completed, setCompleted] = useState(false);
   const [asanaComplete, setAsanaComplete] = useState(false);
   const { toast } = useToast();
+  const { completeDay } = useYoga();
 
   const currentAsana = asanas[currentAsanaIndex];
   const isLastAsana = currentAsanaIndex === asanas.length - 1;
@@ -93,6 +96,10 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
     if (isLastAsana) {
       // Complete the practice
       setCompleted(true);
+      
+      // Update progress stats - 0.1 minutes per asana (6 seconds) for testing
+      completeDay(dayNumber, asanas.length, asanas.length * 0.1);
+      
       toast({
         title: "Congratulations!",
         description: "You've completed your yoga practice for today.",
@@ -105,13 +112,13 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
     } else {
       // Move to next asana
       setCurrentAsanaIndex(prev => prev + 1);
-      setTimeRemaining(120);
+      setTimeRemaining(2); // Reset to 2 seconds for testing
       setAsanaComplete(false);
     }
   };
 
   const handleRepeat = () => {
-    setTimeRemaining(120);
+    setTimeRemaining(2); // Reset to 2 seconds for testing
     setAsanaComplete(false);
   };
 
@@ -128,6 +135,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Practice Complete!</DialogTitle>
+            <DialogDescription>Day {dayNumber} completed successfully</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6 space-y-4">
             <div className="rounded-full bg-green-100 p-3">
@@ -149,6 +157,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Day {dayNumber} - {currentAsana.name}</DialogTitle>
+          <DialogDescription>Complete each pose to progress</DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -194,7 +203,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
               <span className="text-sm font-medium">Time Remaining</span>
               <span className="text-sm font-medium">{formatTime(timeRemaining)}</span>
             </div>
-            <Progress value={(timeRemaining / 120) * 100} className="h-2" />
+            <Progress value={(timeRemaining / 2) * 100} className="h-2" />
           </div>
 
           {/* Action buttons */}
