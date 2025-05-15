@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase, UserDetail, UserProgress } from '../lib/supabase';
+import { supabase, UserDetail, UserProgress, VideoFile, ScheduleEntry } from '../lib/supabase';
+import { toast } from '@/components/ui/sonner';
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type SessionDuration = 'short' | 'medium' | 'long';
@@ -8,7 +9,7 @@ export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
 
 interface YogaContextType {
   userEmail: string | null;
-  setUserEmail: (email: string) => void;
+  setUserEmail: (email: string | null) => void;
   experienceLevel: ExperienceLevel | null;
   sessionDuration: SessionDuration | null;
   practiceDays: WeekDay[];
@@ -25,6 +26,8 @@ interface YogaContextType {
   completeDay: (day: number, poses: number, time: number) => void;
   getCurrentDay: () => number;
   saveUserData: () => Promise<void>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const YogaContext = createContext<YogaContextType | undefined>(undefined);
@@ -36,6 +39,7 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [practiceDays, setPracticeDays] = useState<WeekDay[]>([]);
   const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [totalPosesPracticed, setTotalPosesPracticed] = useState(0);
@@ -54,17 +58,25 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (userEmail) {
       localStorage.setItem('userEmail', userEmail);
+    } else {
+      localStorage.removeItem('userEmail');
     }
   }, [userEmail]);
 
   const loadUserData = async (email: string) => {
+    setIsLoading(true);
     try {
       // Load user details
-      const { data: userDetails } = await supabase
+      const { data: userDetails, error: userError } = await supabase
         .from('user_details')
         .select()
         .eq('email', email)
         .single();
+
+      if (userError && userError.code !== 'PGRST116') {
+        console.error('Error loading user details:', userError);
+        toast.error('Error loading your profile');
+      }
 
       if (userDetails) {
         setExperienceLevel(userDetails.experience_level);
@@ -74,11 +86,15 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // Load user progress
-      const { data: userProgress } = await supabase
+      const { data: userProgress, error: progressError } = await supabase
         .from('user_progress')
         .select()
         .eq('email', email)
         .single();
+
+      if (progressError && progressError.code !== 'PGRST116') {
+        console.error('Error loading user progress:', progressError);
+      }
 
       if (userProgress) {
         setCompletedDays(userProgress.completed_days || []);
@@ -87,6 +103,9 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      toast.error('Something went wrong loading your data');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,14 +131,20 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // If user is logged in, update their progress in Supabase
       if (userEmail) {
         try {
-          await supabase.from('user_progress').upsert({
+          const { error } = await supabase.from('user_progress').upsert({
             email: userEmail,
             completed_days: newCompletedDays,
             total_poses_practiced: newTotalPoses,
             total_practice_time: newTotalTime
           });
+          
+          if (error) {
+            console.error('Error updating progress:', error);
+            toast.error('Could not save your progress');
+          }
         } catch (error) {
           console.error('Error updating progress:', error);
+          toast.error('Could not save your progress');
         }
       }
     }
@@ -134,10 +159,11 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Save user data to Supabase
   const saveUserData = async () => {
     if (!userEmail) return;
+    setIsLoading(true);
 
     try {
       // Save user details
-      await supabase.from('user_details').upsert({
+      const { error: userError } = await supabase.from('user_details').upsert({
         email: userEmail,
         experience_level: experienceLevel,
         session_duration: sessionDuration,
@@ -145,17 +171,50 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         reminder_time: reminderTime
       });
 
+      if (userError) {
+        console.error('Error saving user details:', userError);
+        toast.error('Could not save your profile');
+        return;
+      }
+
       // Save user progress if not already saved
-      await supabase.from('user_progress').upsert({
+      const { error: progressError } = await supabase.from('user_progress').upsert({
         email: userEmail,
         completed_days: completedDays,
         total_poses_practiced: totalPosesPracticed,
         total_practice_time: totalPracticeTime
       }, { onConflict: 'email' });
 
+      if (progressError) {
+        console.error('Error saving user progress:', progressError);
+        toast.error('Could not save your progress');
+        return;
+      }
+
+      toast.success('Your data has been saved');
+
     } catch (error) {
       console.error('Error saving user data:', error);
+      toast.error('Something went wrong');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Logout function
+  const logout = async () => {
+    setUserEmail(null);
+    setExperienceLevel(null);
+    setSessionDuration(null);
+    setPracticeDays([]);
+    setReminderTime(null);
+    setCompletedDays([]);
+    setTotalPosesPracticed(0);
+    setTotalPracticeTime(0);
+    setCurrentStep(0);
+    localStorage.removeItem('userEmail');
+    toast.success('You have been logged out');
+    return Promise.resolve();
   };
 
   return (
@@ -177,7 +236,9 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       totalPracticeTime,
       completeDay,
       getCurrentDay,
-      saveUserData
+      saveUserData,
+      logout,
+      isLoading
     }}>
       {children}
     </YogaContext.Provider>

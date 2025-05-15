@@ -20,6 +20,7 @@ export type UserDetail = {
   session_duration: 'short' | 'medium' | 'long' | null;
   practice_days: string[];
   reminder_time: string | null;
+  created_at?: string;
 };
 
 export type UserProgress = {
@@ -30,6 +31,7 @@ export type UserProgress = {
 };
 
 export type VideoFile = {
+  id?: string;
   category: 'beginner' | 'intermediate' | 'advanced';
   pose_name: string;
   pose_image: string;
@@ -40,6 +42,7 @@ export type VideoFile = {
 };
 
 export type ScheduleEntry = {
+  id?: string;
   category: 'beginner' | 'intermediate' | 'advanced';
   day_number: number;
   pose_names: string[];

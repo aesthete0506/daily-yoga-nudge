@@ -3,14 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useYoga } from "@/contexts/YogaContext";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
 
 const ReminderStep = () => {
-  const { reminderTime, setReminderTime, setCurrentStep, saveUserData } = useYoga();
+  const { reminderTime, setReminderTime, setCurrentStep, saveUserData, isLoading } = useYoga();
   const [time, setTime] = useState(reminderTime || "08:00");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -18,31 +16,19 @@ const ReminderStep = () => {
   };
 
   const handleComplete = async () => {
-    setIsLoading(true);
     setReminderTime(time);
     
     try {
       // Save user data to Supabase
       await saveUserData();
       
-      toast({
-        title: "Yoga practice set up successfully!",
-        description: "Your personalized yoga journey begins now.",
-      });
+      toast.success("Yoga practice set up successfully!");
       
-      // Navigate to the dashboard after a short delay
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      // Navigate to the dashboard
+      navigate('/dashboard');
     } catch (error) {
       console.error("Error saving user data:", error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      toast.error("Something went wrong. Please try again.");
     }
   };
 

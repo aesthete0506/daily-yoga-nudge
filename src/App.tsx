@@ -20,11 +20,19 @@ const ProtectedRoute = ({ element }: { element: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
+  const { userEmail } = useYoga();
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<Index />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/login" element={userEmail ? <Navigate to="/dashboard" /> : <LoginPage />} />
+      <Route path="/" element={
+        userEmail ? 
+          <Index /> : 
+          <Navigate to="/login" />
+      } />
+      <Route path="/dashboard" element={
+        <ProtectedRoute element={<Dashboard />} />
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
