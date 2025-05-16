@@ -7,7 +7,7 @@ import { useYoga } from '@/contexts/YogaContext';
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { setUserEmail, setExperienceLevel, setSessionDuration, setPracticeDays, setReminderTime } = useYoga();
+  const { setUserEmail, setExperienceLevel, setSessionDuration, practiceDays, setReminderTime } = useYoga();
 
   // Initialize auth state on component mount
   useEffect(() => {
@@ -43,10 +43,6 @@ export const useAuth = () => {
               setSessionDuration(data.session_duration);
             }
             
-            if (data.practice_days && data.practice_days.length > 0) {
-              setPracticeDays(data.practice_days);
-            }
-            
             if (data.reminder_time) {
               setReminderTime(data.reminder_time);
             }
@@ -67,7 +63,7 @@ export const useAuth = () => {
     };
 
     initializeAuth();
-  }, [setUserEmail, setExperienceLevel, setSessionDuration, setPracticeDays, setReminderTime]);
+  }, [setUserEmail, setExperienceLevel, setSessionDuration, setReminderTime]);
 
   const login = async (email: string) => {
     setIsLoading(true);
@@ -101,10 +97,6 @@ export const useAuth = () => {
         
         if (data.session_duration) {
           setSessionDuration(data.session_duration);
-        }
-        
-        if (data.practice_days && data.practice_days.length > 0) {
-          setPracticeDays(data.practice_days);
         }
         
         if (data.reminder_time) {
