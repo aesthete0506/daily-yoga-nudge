@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { VideoFile, getUserYogaPoses } from '@/lib/supabase';
 import { useYoga } from '@/contexts/YogaContext';
@@ -21,7 +20,20 @@ export const useYogaPoses = () => {
     
     try {
       const yogaPoses = await getUserYogaPoses(userEmail);
-      setPoses(yogaPoses);
+      
+      // Filter out any missing image or video data
+      const validPoses = yogaPoses.filter(pose => 
+        pose.pose_name && (pose.pose_image || pose.pose_video)
+      );
+      
+      // Set video fields to empty for dashboard display
+      const dashboardSafePoses = validPoses.map(pose => ({
+        ...pose,
+        // Keep the video URL reference but don't render in dashboard
+        pose_video: ''
+      }));
+      
+      setPoses(dashboardSafePoses);
     } catch (err) {
       console.error('Error fetching yoga poses:', err);
       setError('Failed to load yoga poses');
@@ -43,10 +55,24 @@ export const useYogaPoses = () => {
     fetchPoses();
   };
 
+  // Function to get a full pose with video data (for practice mode only)
+  const getFullPoseData = async (poseName: string): Promise<VideoFile | null> => {
+    if (!userEmail || !experienceLevel) return null;
+    
+    try {
+      const yogaPoses = await getUserYogaPoses(userEmail);
+      return yogaPoses.find(pose => pose.pose_name === poseName) || null;
+    } catch (err) {
+      console.error('Error fetching pose data:', err);
+      return null;
+    }
+  };
+
   return {
     poses,
     isLoading,
     error,
-    refreshPoses
+    refreshPoses,
+    getFullPoseData
   };
 };

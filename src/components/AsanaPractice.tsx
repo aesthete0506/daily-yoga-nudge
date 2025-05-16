@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useYoga } from "@/contexts/YogaContext";
+import YogaVideoPlayer from "./YogaVideoPlayer";
+import { VideoFile, getVideoFiles } from "@/lib/supabase";
 
 interface Asana {
   name: string;
@@ -33,11 +35,32 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
   const [timeRemaining, setTimeRemaining] = useState(2); // 2 seconds for testing
   const [completed, setCompleted] = useState(false);
   const [asanaComplete, setAsanaComplete] = useState(false);
+  const [videoData, setVideoData] = useState<VideoFile | null>(null);
   const { toast } = useToast();
-  const { completeDay } = useYoga();
+  const { completeDay, experienceLevel } = useYoga();
 
   const currentAsana = asanas[currentAsanaIndex];
   const isLastAsana = currentAsanaIndex === asanas.length - 1;
+
+  // Load video data for the current asana
+  useEffect(() => {
+    const loadVideoData = async () => {
+      if (!currentAsana) return;
+      
+      try {
+        // Get video data for current pose
+        const videos = await getVideoFiles(experienceLevel as any);
+        const video = videos.find(v => v.pose_name === currentAsana.name);
+        setVideoData(video || null);
+      } catch (error) {
+        console.error("Error loading video:", error);
+      }
+    };
+
+    if (open) {
+      loadVideoData();
+    }
+  }, [currentAsana, experienceLevel, open]);
 
   // Steps for each asana - would come from a database in a real app
   const asanaSteps = {
@@ -161,12 +184,8 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, asanas }: AsanaPracticeP
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Video placeholder - in a real app, this would be an actual video */}
-          <AspectRatio ratio={16 / 9} className="bg-muted overflow-hidden rounded-md">
-            <div className="flex items-center justify-center h-full bg-muted">
-              <p className="text-muted-foreground">[Video of {currentAsana.name}]</p>
-            </div>
-          </AspectRatio>
+          {/* Video display - only shows in practice mode, uses the YogaVideoPlayer component */}
+          <YogaVideoPlayer video={videoData} />
 
           {/* Hover buttons */}
           <div className="flex space-x-2">

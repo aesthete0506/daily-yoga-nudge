@@ -52,6 +52,7 @@ const UserYogaPoses = () => {
                       className="object-cover w-full h-full"
                     />
                   )}
+                  {/* Important: No video elements here, only showing images in the dashboard */}
                 </div>
                 <CardContent className="p-3">
                   <h3 className="font-medium">{pose.pose_name}</h3>
