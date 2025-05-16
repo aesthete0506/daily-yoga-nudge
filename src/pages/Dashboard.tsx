@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,17 +8,42 @@ import { useYoga } from "@/contexts/YogaContext";
 import { capitalizeFirstLetter } from "@/lib/utils";
 import PracticePlanDialog from "@/components/PracticePlanDialog";
 import DayPlanDialog from "@/components/DayPlanDialog";
+import UserYogaPoses from "@/components/UserYogaPoses";
+import { toast } from "@/components/ui/sonner";
 
 const Dashboard = () => {
   const { experienceLevel, sessionDuration, practiceDays, reminderTime, completedDays, totalPosesPracticed, totalPracticeTime } = useYoga();
   const navigate = useNavigate();
   const [practicePlanOpen, setPracticePlanOpen] = useState(false);
   const [dayPlanOpen, setDayPlanOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // If user hasn't completed onboarding, redirect to home
-  if (!experienceLevel || !sessionDuration || practiceDays.length === 0 || !reminderTime) {
-    navigate('/');
-    return null;
+  useEffect(() => {
+    // Add a small delay to allow context to fully load
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // If user hasn't completed onboarding and loading is finished, redirect to home
+  useEffect(() => {
+    if (!isLoading && (!experienceLevel || !sessionDuration || practiceDays.length === 0 || !reminderTime)) {
+      toast.info("Let's complete your profile first");
+      navigate('/');
+    }
+  }, [isLoading, experienceLevel, sessionDuration, practiceDays, reminderTime, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-yoga-100">
+        <div className="text-center">
+          <h2 className="text-xl font-medium mb-2">Loading your dashboard...</h2>
+          <p className="text-muted-foreground">Just a moment while we prepare your practice</p>
+        </div>
+      </div>
+    );
   }
 
   // Generate journey cards
@@ -83,6 +108,11 @@ const Dashboard = () => {
           </Card>
 
           {/* Your Practice Plan card moved to header button */}
+        </div>
+
+        {/* User's Yoga Poses Section */}
+        <div className="mt-8">
+          <UserYogaPoses />
         </div>
 
         <div className="mt-8">

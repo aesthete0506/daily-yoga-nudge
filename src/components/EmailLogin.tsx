@@ -1,19 +1,19 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase, UserDetail } from "@/lib/supabase";
-import { useYoga } from "@/contexts/YogaContext";
+import { useAuth } from "@/hooks/use-auth";
 import YogaCard from "./YogaCard";
+import { useYoga } from "@/contexts/YogaContext";
 
 const EmailLogin = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { setUserEmail } = useYoga();
+  const auth = useAuth();
+  const { experienceLevel } = useYoga();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,20 +25,16 @@ const EmailLogin = () => {
     setIsLoading(true);
 
     try {
-      // Check if user exists
-      const { data: existingUser } = await supabase
-        .from("user_details")
-        .select()
-        .eq("email", email)
-        .single();
-
-      // Store the email in context
-      setUserEmail(email);
+      const isExistingUser = await auth.login(email);
       
-      if (existingUser) {
-        // Existing user - load their data and redirect to dashboard
+      if (isExistingUser && experienceLevel) {
+        // Existing user with preferences - redirect to dashboard
         toast.success("Welcome back!");
         navigate("/dashboard");
+      } else if (isExistingUser) {
+        // Existing user without complete preferences - redirect to onboarding
+        toast.success("Welcome back! Let's complete your profile");
+        navigate("/");
       } else {
         // New user - redirect to onboarding
         toast.success("Welcome! Let's set up your practice");
