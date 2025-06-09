@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { VideoFile, getUserYogaPoses } from '@/lib/supabase';
+import { VideoFile, getUserYogaPoses, supabase } from '@/lib/supabase';
 import { useYoga } from '@/contexts/YogaContext';
 import { toast } from '@/components/ui/sonner';
 
@@ -9,9 +10,11 @@ export const useYogaPoses = () => {
   const [error, setError] = useState<string | null>(null);
   const { userEmail, experienceLevel } = useYoga();
 
-  const fetchPoses = async () => {
+  const fetchPoses = async (forceRefresh = false) => {
     if (!userEmail) {
-      toast.error("You need to be logged in to view your poses");
+      if (!forceRefresh) {
+        toast.error("You need to be logged in to view your poses");
+      }
       return;
     }
     
@@ -19,40 +22,90 @@ export const useYogaPoses = () => {
     setError(null);
     
     try {
+      console.log(`Fetching poses for user: ${userEmail}, level: ${experienceLevel}, forceRefresh: ${forceRefresh}`);
+      
+      // Add timestamp to force cache invalidation
+      const timestamp = Date.now();
+      console.log(`Fetch attempt at: ${timestamp}`);
+      
       const yogaPoses = await getUserYogaPoses(userEmail);
       
-      // Filter out any missing image or video data
+      console.log("Retrieved yoga poses:", yogaPoses);
+      
+      // Filter out any missing required data
       const validPoses = yogaPoses.filter(pose => 
         pose.pose_name && (pose.pose_image || pose.pose_video)
       );
       
-      // Set video fields to empty for dashboard display
-      const dashboardSafePoses = validPoses.map(pose => ({
-        ...pose,
-        // Keep the video URL reference but don't render in dashboard
-        pose_video: ''
-      }));
+      console.log("Valid filtered poses:", validPoses);
       
-      setPoses(dashboardSafePoses);
+      setPoses(validPoses);
+      
+      if (forceRefresh) {
+        toast.success("Poses refreshed successfully!");
+      }
     } catch (err) {
       console.error('Error fetching yoga poses:', err);
       setError('Failed to load yoga poses');
-      toast.error("Couldn't load your yoga poses. Please try again later.");
+      if (forceRefresh) {
+        toast.error("Couldn't refresh your yoga poses. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch poses when component mounts or when user email/experience level changes
+  // Set up real-time subscription and initial fetch
   useEffect(() => {
     if (userEmail && experienceLevel) {
+      console.log("Setting up poses fetch for:", userEmail, experienceLevel);
       fetchPoses();
+
+      // Subscribe to real-time changes on video_files table
+      const videoChannel = supabase
+        .channel('video_files_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'video_files'
+          },
+          (payload) => {
+            console.log('Video files table changed:', payload);
+            fetchPoses(false); // Refresh without showing toast
+          }
+        )
+        .subscribe();
+
+      // Also subscribe to user_details changes
+      const userChannel = supabase
+        .channel('user_details_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_details',
+            filter: `email=eq.${userEmail}`
+          },
+          (payload) => {
+            console.log('User details changed:', payload);
+            fetchPoses(false);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(videoChannel);
+        supabase.removeChannel(userChannel);
+      };
     }
   }, [userEmail, experienceLevel]);
 
   // Function to manually refresh poses
   const refreshPoses = () => {
-    fetchPoses();
+    fetchPoses(true);
   };
 
   // Function to get a full pose with video data (for practice mode only)

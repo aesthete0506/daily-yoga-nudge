@@ -5,83 +5,49 @@
 
 @layer base {
   :root {
-    --background: 260 100% 99%;
-    --foreground: 260 30% 20%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 260 30% 20%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 260 30% 20%;
-
-    --primary: 260 64% 62%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 260 31% 88%;
-    --secondary-foreground: 260 30% 20%;
-
-    --muted: 260 31% 95%;
-    --muted-foreground: 260 20% 40%;
-
-    --accent: 260 31% 88%;
-    --accent-foreground: 260 30% 20%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 260 31% 88%;
-    --input: 260 31% 88%;
-    --ring: 260 64% 62%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* New color palette */
+    --background: 235 243 243; /* #ebf3f3 */
+    --foreground: 45 40 87; /* #2d2857 */
+    --card: 255 255 255; /* #ffffff */
+    --card-foreground: 45 40 87; /* #2d2857 */
+    --popover: 255 255 255; /* #ffffff */
+    --popover-foreground: 45 40 87; /* #2d2857 */
+    --primary: 235 100 76; /* #eb644c */
+    --primary-foreground: 255 255 255; /* #ffffff */
+    --secondary: 255 255 255; /* #ffffff */
+    --secondary-foreground: 45 40 87; /* #2d2857 */
+    --muted: 239 245 245;
+    --muted-foreground: 107 114 128;
+    --accent: 239 245 245;
+    --accent-foreground: 45 40 87;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 229 231 235;
+    --input: 229 231 235;
+    --ring: 235 100 76; /* #eb644c */
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 260 30% 10%;
-    --foreground: 260 20% 95%;
-
-    --card: 260 30% 15%;
-    --card-foreground: 260 20% 95%;
-
-    --popover: 260 30% 15%;
-    --popover-foreground: 260 20% 95%;
-
-    --primary: 260 64% 62%;
-    --primary-foreground: 260 20% 95%;
-
-    --secondary: 260 25% 25%;
-    --secondary-foreground: 260 20% 95%;
-
-    --muted: 260 25% 25%;
-    --muted-foreground: 260 20% 70%;
-
-    --accent: 260 25% 25%;
-    --accent-foreground: 260 20% 95%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 260 20% 95%;
-
-    --border: 260 25% 25%;
-    --input: 260 25% 25%;
-    --ring: 260 64% 62%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 45 40 87; /* #2d2857 */
+    --foreground: 255 255 255;
+    --card: 55 50 97;
+    --card-foreground: 255 255 255;
+    --popover: 45 40 87;
+    --popover-foreground: 255 255 255;
+    --primary: 235 100 76; /* #eb644c */
+    --primary-foreground: 255 255 255;
+    --secondary: 65 60 107;
+    --secondary-foreground: 255 255 255;
+    --muted: 65 60 107;
+    --muted-foreground: 156 163 175;
+    --accent: 65 60 107;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 75 70 117;
+    --input: 75 70 117;
+    --ring: 235 100 76;
   }
 }
 
@@ -89,18 +55,58 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: #ebf3f3; /* Force background color */
+    color: #2d2857; /* Force text color */
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: #2d2857 !important; /* Force heading colors */
   }
 }
 
-.yoga-gradient {
-  background: linear-gradient(135deg, #D6BCFA 0%, #9B87F5 100%);
+/* Apply new color scheme to specific components */
+.bg-yoga-100 {
+  background-color: #ebf3f3 !important;
 }
 
-.yoga-card {
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+.text-text-primary {
+  color: #2d2857 !important;
+}
+
+.bg-primary {
+  background-color: #eb644c !important;
+}
+
+.text-primary {
+  color: #eb644c !important;
+}
+
+.border-primary {
+  border-color: #eb644c !important;
+}
+
+.hover\:bg-primary:hover {
+  background-color: #eb644c !important;
+}
+
+/* Button styling */
+button {
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #eb644c !important;
+  color: #ffffff !important;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #d55943 !important;
+}
+
+/* Card styling */
+.card {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb;
 }

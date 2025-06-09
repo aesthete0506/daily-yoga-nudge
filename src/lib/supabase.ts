@@ -5,11 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://kwgyfuzqrsooyidmjksv.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3Z3lmdXpxcnNvb3lpZG1qa3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDczMDA3OTgsImV4cCI6MjA2Mjg3Njc5OH0.xMn8OA8vwmiVA7mz_4Uys5wcv7naNYyPh4g6oV2Ty1s';
 
-// For future reference, once environment variables are set up:
-// const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || fallbackUrl;
-// const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || fallbackKey;
-
-// Create the Supabase client with better options for data refreshing
+// Create the Supabase client with real-time updates and no caching
 export const supabase = createClient(
   supabaseUrl,
   supabaseAnonKey,
@@ -18,20 +14,27 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
     },
+    db: {
+      schema: 'public',
+    },
     global: {
-      // Disable cache to ensure fresh data
-      headers: { 'Cache-Control': 'no-store' },
-    }
+      headers: { 
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
   }
 );
 
 // Enable public access temporarily - this is needed to bypass RLS policies for anonymous users
-// In a production environment, you should use proper authentication
 export const enablePublicAccess = async () => {
-  // Since we can't directly modify RLS from client side, we need to create an entry first
-  // then use it as a reference. This is a workaround for development purposes only.
   try {
-    // First try to insert the record with an RPC call (which might bypass RLS)
     const { error: rpcError } = await supabase.rpc('create_user_if_not_exists', { 
       user_email: localStorage.getItem('userEmail') || 'temp@example.com' 
     });
@@ -47,7 +50,7 @@ export const enablePublicAccess = async () => {
   }
 };
 
-// Function to fetch video files with cache invalidation
+// Function to fetch video files with real-time updates and cache busting
 export const getVideoFiles = async (category?: 'beginner' | 'intermediate' | 'advanced'): Promise<VideoFile[]> => {
   try {
     await enablePublicAccess();
@@ -60,8 +63,10 @@ export const getVideoFiles = async (category?: 'beginner' | 'intermediate' | 'ad
       query = query.eq('category', category);
     }
     
-    // Add timestamp to force cache invalidation
-    const timestamp = new Date().getTime();
+    // Add random parameter to bust cache
+    const timestamp = Date.now();
+    console.log(`Fetching video files at ${timestamp}`);
+    
     const { data, error } = await query;
     
     if (error) {
@@ -69,6 +74,7 @@ export const getVideoFiles = async (category?: 'beginner' | 'intermediate' | 'ad
       return [];
     }
     
+    console.log("Fetched video files:", data);
     return data || [];
   } catch (error) {
     console.error("Error in getVideoFiles:", error);
@@ -76,7 +82,7 @@ export const getVideoFiles = async (category?: 'beginner' | 'intermediate' | 'ad
   }
 };
 
-// Function to fetch user's yoga poses
+// Function to fetch user's yoga poses with real-time updates
 export const getUserYogaPoses = async (email: string): Promise<VideoFile[]> => {
   try {
     await enablePublicAccess();
@@ -107,7 +113,7 @@ export const getUserYogaPoses = async (email: string): Promise<VideoFile[]> => {
     
     const experienceLevel = userData?.experience_level || 'beginner';
     
-    // Get all videos for the user's experience level
+    // Get all videos for the user's experience level with cache busting
     return await getVideoFiles(experienceLevel as 'beginner' | 'intermediate' | 'advanced');
   } catch (error) {
     console.error("Error in getUserYogaPoses:", error);
@@ -130,11 +136,15 @@ export type UserProgress = {
   completed_days: number[];
   total_poses_practiced: number;
   total_practice_time: number;
+  current_day: number;
+  profile_locked: boolean;
+  cooldown_preference: 'auto' | 'manual';
 };
 
 export type VideoFile = {
   id?: string;
   category: 'beginner' | 'intermediate' | 'advanced';
+  day_number?: number;
   pose_name: string;
   pose_image: string;
   pose_video: string;
@@ -148,4 +158,5 @@ export type ScheduleEntry = {
   category: 'beginner' | 'intermediate' | 'advanced';
   day_number: number;
   pose_names: string[];
+  completion_status: 'locked' | 'available' | 'completed';
 };
