@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,14 +14,15 @@ import AsanaPractice from "./AsanaPractice";
 interface DayPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  dayNumber?: number;
 }
 
-const DayPlanDialog = ({ open, onOpenChange }: DayPlanDialogProps) => {
+const DayPlanDialog = ({ open, onOpenChange, dayNumber }: DayPlanDialogProps) => {
   const [startPractice, setStartPractice] = useState(false);
   const { sessionDuration, getCurrentDay } = useYoga();
   
-  // Get the current day from context
-  const dayNumber = getCurrentDay();
+  // Use provided dayNumber or current day
+  const currentDayNumber = dayNumber || getCurrentDay();
 
   // Sample day plan data - in a real app, this would come from an API or database
   const dayPlan = {
@@ -44,29 +44,29 @@ const DayPlanDialog = ({ open, onOpenChange }: DayPlanDialogProps) => {
         onOpenChange(isOpen);
         if (!isOpen) setStartPractice(false);
       }} 
-      dayNumber={dayNumber} 
+      dayNumber={currentDayNumber} 
       asanas={dayPlan.asanas}
     />;
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle>Day {dayNumber} Practice</DialogTitle>
+          <DialogTitle className="text-text-primary">Day {currentDayNumber} Practice</DialogTitle>
           <DialogDescription>Your personalized practice for today</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <h4 className="font-medium">Goal of the Day</h4>
+            <h4 className="font-medium text-text-primary">Goal of the Day</h4>
             <p className="text-sm text-muted-foreground">{dayPlan.goal}</p>
           </div>
           <div className="space-y-2">
-            <h4 className="font-medium">Muscles Impacted</h4>
+            <h4 className="font-medium text-text-primary">Muscles Impacted</h4>
             <p className="text-sm text-muted-foreground">{dayPlan.muscles}</p>
           </div>
           <div className="space-y-2">
-            <h4 className="font-medium">Asanas</h4>
+            <h4 className="font-medium text-text-primary">Asanas</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               {dayPlan.asanas.map((asana, index) => (
                 <li key={index}>{asana.name}</li>
@@ -74,16 +74,24 @@ const DayPlanDialog = ({ open, onOpenChange }: DayPlanDialogProps) => {
             </ul>
           </div>
           <div className="space-y-2">
-            <h4 className="font-medium">Total Time Required</h4>
+            <h4 className="font-medium text-text-primary">Total Time Required</h4>
             <p className="text-sm text-muted-foreground">{dayPlan.totalTime}</p>
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <Button onClick={() => setStartPractice(true)}>
+          <Button 
+            onClick={() => setStartPractice(true)}
+            className="bg-primary text-white hover:bg-primary/90"
+          >
             Start Practice
           </Button>
           <DialogClose asChild>
-            <Button variant="outline">Go Back</Button>
+            <Button 
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-white"
+            >
+              Go Back
+            </Button>
           </DialogClose>
         </div>
       </DialogContent>
