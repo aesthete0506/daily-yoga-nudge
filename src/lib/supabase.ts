@@ -48,11 +48,13 @@ export type ContentLibrary = {
   muscles_impacted?: string;
 };
 
-// Legacy type alias for backward compatibility
+// Updated VideoFile type with all necessary properties
 export type VideoFile = ContentLibrary & {
   pose_name: string;
   pose_image?: string;
   pose_video?: string;
+  day_number?: number;
+  pose_description?: string;
 };
 
 export type UserJourney = {
@@ -105,7 +107,9 @@ export const getVideoFiles = async (experienceLevel: 'beginner' | 'intermediate'
     return (data || []).map(item => ({
       ...item,
       pose_name: item.asana_name,
-      pose_video: item.video_url
+      pose_video: item.video_url,
+      day_number: item.day,
+      pose_description: item.benefits
     }));
   } catch (error) {
     console.error('Error in getVideoFiles:', error);

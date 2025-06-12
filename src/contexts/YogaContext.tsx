@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase, UserDetails, UserJourney, getUserDetails, getUserJourney, saveUserDetails } from '../lib/supabase';
 import { toast } from '@/components/ui/sonner';
@@ -149,10 +150,30 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
 
     try {
+      // Convert SessionDuration to number for database storage
+      let durationInMinutes: number;
+      if (typeof sessionDuration === 'number') {
+        durationInMinutes = sessionDuration;
+      } else {
+        switch (sessionDuration) {
+          case 'short':
+            durationInMinutes = 8;
+            break;
+          case 'medium':
+            durationInMinutes = 15;
+            break;
+          case 'long':
+            durationInMinutes = 25;
+            break;
+          default:
+            durationInMinutes = 15;
+        }
+      }
+
       const userDetails: UserDetails = {
         email: userEmail,
         experience_level: experienceLevel,
-        session_duration: sessionDuration,
+        session_duration: durationInMinutes,
         practice_days: practiceDays,
         reminder_time: reminderTime
       };
