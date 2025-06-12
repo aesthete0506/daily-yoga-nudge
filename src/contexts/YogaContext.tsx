@@ -1,21 +1,20 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase, UserDetail, UserProgress, VideoFile, ScheduleEntry, enablePublicAccess } from '../lib/supabase';
+import { supabase, UserDetails, UserJourney, getUserDetails, getUserJourney, saveUserDetails } from '../lib/supabase';
 import { toast } from '@/components/ui/sonner';
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
-export type SessionDuration = 'short' | 'medium' | 'long';
 export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 interface YogaContextType {
   userEmail: string | null;
   setUserEmail: (email: string | null) => void;
   experienceLevel: ExperienceLevel | null;
-  sessionDuration: SessionDuration | null;
+  sessionDuration: number | null; // in minutes
   practiceDays: WeekDay[];
   reminderTime: string | null;
   setExperienceLevel: (level: ExperienceLevel) => void;
-  setSessionDuration: (duration: SessionDuration) => void;
+  setSessionDuration: (duration: number) => void;
   togglePracticeDay: (day: WeekDay) => void;
   setReminderTime: (time: string) => void;
   currentStep: number;
@@ -23,11 +22,14 @@ interface YogaContextType {
   completedDays: number[];
   totalPosesPracticed: number;
   totalPracticeTime: number;
-  completeDay: (day: number, poses: number, time: number) => void;
+  currentDay: number;
+  isProfileLocked: boolean;
+  completeDay: (day: number, poses: number, time: number) => Promise<void>;
   getCurrentDay: () => number;
   saveUserData: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  hasCompletedToday: boolean;
 }
 
 const YogaContext = createContext<YogaContextType | undefined>(undefined);
@@ -35,16 +37,18 @@ const YogaContext = createContext<YogaContextType | undefined>(undefined);
 export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | null>(null);
-  const [sessionDuration, setSessionDuration] = useState<SessionDuration | null>(null);
+  const [sessionDuration, setSessionDuration] = useState<number | null>(null);
   const [practiceDays, setPracticeDays] = useState<WeekDay[]>([]);
   const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProfileLocked, setIsProfileLocked] = useState(false);
   
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [totalPosesPracticed, setTotalPosesPracticed] = useState(0);
   const [totalPracticeTime, setTotalPracticeTime] = useState(0);
-  const [hasAccessEnabled, setHasAccessEnabled] = useState(false);
+  const [currentDay, setCurrentDay] = useState(1);
+  const [hasCompletedToday, setHasCompletedToday] = useState(false);
 
   // Load user data from local storage on initial load
   useEffect(() => {
@@ -53,11 +57,6 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserEmail(storedEmail);
       loadUserData(storedEmail);
     }
-    
-    // Enable public access when component mounts
-    enablePublicAccess().then(success => {
-      setHasAccessEnabled(success);
-    });
   }, []);
 
   // When email changes, save it to local storage
@@ -72,45 +71,27 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loadUserData = async (email: string) => {
     setIsLoading(true);
     try {
-      // Wait for public access to be enabled
-      if (!hasAccessEnabled) {
-        await enablePublicAccess();
-      }
-      
       // Load user details
-      const { data: userDetails, error: userError } = await supabase
-        .from('user_details')
-        .select()
-        .eq('email', email)
-        .single();
-
-      if (userError && userError.code !== 'PGRST116') {
-        console.error('Error loading user details:', userError);
-        toast.error('Error loading your profile');
-      }
-
+      const userDetails = await getUserDetails(email);
       if (userDetails) {
         setExperienceLevel(userDetails.experience_level);
         setSessionDuration(userDetails.session_duration);
-        setPracticeDays(userDetails.practice_days);
+        setPracticeDays(userDetails.practice_days as WeekDay[]);
         setReminderTime(userDetails.reminder_time);
+        setIsProfileLocked(true); // Lock profile after first save
       }
 
-      // Load user progress
-      const { data: userProgress, error: progressError } = await supabase
-        .from('user_progress')
-        .select()
-        .eq('email', email)
-        .single();
-
-      if (progressError && progressError.code !== 'PGRST116') {
-        console.error('Error loading user progress:', progressError);
-      }
-
-      if (userProgress) {
-        setCompletedDays(userProgress.completed_days || []);
-        setTotalPosesPracticed(userProgress.total_poses_practiced || 0);
-        setTotalPracticeTime(userProgress.total_practice_time || 0);
+      // Load user journey
+      const userJourney = await getUserJourney(email);
+      if (userJourney) {
+        setCompletedDays(userJourney.completed_days || []);
+        setTotalPosesPracticed(userJourney.total_poses_practiced || 0);
+        setTotalPracticeTime(userJourney.total_practice_time || 0);
+        setCurrentDay(userJourney.current_day || 1);
+        
+        // Check if user has completed practice today
+        const today = new Date().toISOString().split('T')[0];
+        setHasCompletedToday(userJourney.last_practice_date === today);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -121,6 +102,10 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const togglePracticeDay = (day: WeekDay) => {
+    if (isProfileLocked) {
+      toast.error('Your preferences are locked and cannot be changed');
+      return;
+    }
     setPracticeDays(prev => 
       prev.includes(day) 
         ? prev.filter(d => d !== day)
@@ -129,107 +114,57 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Function to complete a day and update stats
-  const completeDay = async (day: number, poses: number, time: number) => {
-    if (!completedDays.includes(day)) {
-      const newCompletedDays = [...completedDays, day];
-      const newTotalPoses = totalPosesPracticed + poses;
-      const newTotalTime = totalPracticeTime + time;
+  const completeDayAction = async (day: number, poses: number, time: number) => {
+    if (!userEmail) return;
+    
+    try {
+      const { completeDay } = await import('../lib/supabase');
+      const result = await completeDay(userEmail, day, poses, time);
       
-      setCompletedDays(newCompletedDays);
-      setTotalPosesPracticed(newTotalPoses);
-      setTotalPracticeTime(newTotalTime);
-      
-      // If user is logged in, update their progress in Supabase
-      if (userEmail) {
-        try {
-          // First ensure we have a user_details entry
-          await saveUserData();
-          
-          // Now update the progress
-          const { error } = await supabase.from('user_progress').upsert({
-            email: userEmail,
-            completed_days: newCompletedDays,
-            total_poses_practiced: newTotalPoses,
-            total_practice_time: newTotalTime
-          });
-          
-          if (error) {
-            console.error('Error updating progress:', error);
-            toast.error('Could not save your progress');
-          }
-        } catch (error) {
-          console.error('Error updating progress:', error);
-          toast.error('Could not save your progress');
-        }
+      if (result.success) {
+        // Reload user journey data
+        await loadUserData(userEmail);
+        toast.success('Congratulations! Day completed successfully!');
+      } else {
+        toast.error(result.error || 'Failed to complete day');
       }
+    } catch (error) {
+      console.error('Error completing day:', error);
+      toast.error('Something went wrong');
     }
   };
 
   // Get the current day (next day after last completed day or 1 if none completed)
   const getCurrentDay = () => {
-    if (completedDays.length === 0) return 1;
-    return Math.max(...completedDays) + 1;
+    return currentDay;
   };
 
   // Save user data to Supabase
   const saveUserData = async () => {
-    if (!userEmail) return;
+    if (!userEmail || !experienceLevel || !sessionDuration || practiceDays.length === 0 || !reminderTime) {
+      toast.error('Please complete all fields');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      // Make sure public access is enabled
-      if (!hasAccessEnabled) {
-        await enablePublicAccess();
-      }
-      
-      // Use an RPC call to create the user details
-      const { error: rpcError } = await supabase.rpc('create_or_update_user_details', {
-        p_email: userEmail,
-        p_experience_level: experienceLevel,
-        p_session_duration: sessionDuration,
-        p_practice_days: practiceDays,
-        p_reminder_time: reminderTime
-      });
-
-      if (rpcError) {
-        console.error('Error saving user details:', rpcError);
-        
-        // Fallback to direct insertion with explicit data 
-        const { error: userError } = await supabase.from('user_details').upsert({
-          email: userEmail,
-          experience_level: experienceLevel,
-          session_duration: sessionDuration,
-          practice_days: practiceDays,
-          reminder_time: reminderTime
-        }, {
-          onConflict: 'email'
-        });
-        
-        if (userError) {
-          console.error('Error with fallback save:', userError);
-          toast.error('Could not save your profile');
-          return;
-        }
-      }
-
-      // Initialize user progress if not already saved
-      const { error: progressError } = await supabase.from('user_progress').upsert({
+      const userDetails: UserDetails = {
         email: userEmail,
-        completed_days: completedDays.length > 0 ? completedDays : [],
-        total_poses_practiced: totalPosesPracticed,
-        total_practice_time: totalPracticeTime
-      }, { 
-        onConflict: 'email' 
-      });
+        experience_level: experienceLevel,
+        session_duration: sessionDuration,
+        practice_days: practiceDays,
+        reminder_time: reminderTime
+      };
 
-      if (progressError) {
-        console.error('Error saving user progress:', progressError);
-        toast.error('Could not save your progress');
-        return;
+      const success = await saveUserDetails(userDetails);
+      
+      if (success) {
+        setIsProfileLocked(true); // Lock profile after first save
+        toast.success('Your preferences have been saved and locked');
+      } else {
+        toast.error('Could not save your profile');
       }
-
-      toast.success('Your data has been saved');
-
     } catch (error) {
       console.error('Error saving user data:', error);
       toast.error('Something went wrong');
@@ -248,7 +183,10 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCompletedDays([]);
     setTotalPosesPracticed(0);
     setTotalPracticeTime(0);
+    setCurrentDay(1);
     setCurrentStep(0);
+    setIsProfileLocked(false);
+    setHasCompletedToday(false);
     localStorage.removeItem('userEmail');
     toast.success('You have been logged out');
     return Promise.resolve();
@@ -262,20 +200,41 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       sessionDuration,
       practiceDays,
       reminderTime,
-      setExperienceLevel,
-      setSessionDuration,
+      setExperienceLevel: (level) => {
+        if (isProfileLocked) {
+          toast.error('Your preferences are locked and cannot be changed');
+          return;
+        }
+        setExperienceLevel(level);
+      },
+      setSessionDuration: (duration) => {
+        if (isProfileLocked) {
+          toast.error('Your preferences are locked and cannot be changed');
+          return;
+        }
+        setSessionDuration(duration);
+      },
       togglePracticeDay,
-      setReminderTime,
+      setReminderTime: (time) => {
+        if (isProfileLocked) {
+          toast.error('Your preferences are locked and cannot be changed');
+          return;
+        }
+        setReminderTime(time);
+      },
       currentStep,
       setCurrentStep,
       completedDays,
       totalPosesPracticed,
       totalPracticeTime,
-      completeDay,
+      currentDay,
+      isProfileLocked,
+      completeDay: completeDayAction,
       getCurrentDay,
       saveUserData,
       logout,
-      isLoading
+      isLoading,
+      hasCompletedToday
     }}>
       {children}
     </YogaContext.Provider>

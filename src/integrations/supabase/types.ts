@@ -9,54 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      pose_completions: {
+      content_library: {
         Row: {
-          completed_at: string | null
-          day_number: number
+          asana_name: string
+          benefits: string | null
+          day: number
+          experience_level: string
           id: string
-          pose_name: string
-          user_email: string
+          muscles_impacted: string | null
+          video_url: string
         }
         Insert: {
-          completed_at?: string | null
-          day_number: number
+          asana_name: string
+          benefits?: string | null
+          day: number
+          experience_level: string
           id?: string
-          pose_name: string
-          user_email: string
+          muscles_impacted?: string | null
+          video_url: string
         }
         Update: {
-          completed_at?: string | null
-          day_number?: number
+          asana_name?: string
+          benefits?: string | null
+          day?: number
+          experience_level?: string
           id?: string
-          pose_name?: string
-          user_email?: string
-        }
-        Relationships: []
-      }
-      schedule: {
-        Row: {
-          category: string | null
-          completion_status: string | null
-          day_number: number
-          id: string
-          is_unlocked: boolean | null
-          pose_names: string[] | null
-        }
-        Insert: {
-          category?: string | null
-          completion_status?: string | null
-          day_number: number
-          id?: string
-          is_unlocked?: boolean | null
-          pose_names?: string[] | null
-        }
-        Update: {
-          category?: string | null
-          completion_status?: string | null
-          day_number?: number
-          id?: string
-          is_unlocked?: boolean | null
-          pose_names?: string[] | null
+          muscles_impacted?: string | null
+          video_url?: string
         }
         Relationships: []
       }
@@ -64,63 +43,60 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string
-          experience_level: string | null
-          practice_days: string[] | null
-          reminder_time: string | null
-          session_duration: string | null
+          experience_level: string
+          practice_days: string[]
+          reminder_time: string
+          session_duration: number
         }
         Insert: {
           created_at?: string | null
           email: string
-          experience_level?: string | null
-          practice_days?: string[] | null
-          reminder_time?: string | null
-          session_duration?: string | null
+          experience_level: string
+          practice_days: string[]
+          reminder_time: string
+          session_duration: number
         }
         Update: {
           created_at?: string | null
           email?: string
-          experience_level?: string | null
-          practice_days?: string[] | null
-          reminder_time?: string | null
-          session_duration?: string | null
+          experience_level?: string
+          practice_days?: string[]
+          reminder_time?: string
+          session_duration?: number
         }
         Relationships: []
       }
-      user_progress: {
+      user_journey: {
         Row: {
           completed_days: number[] | null
-          cooldown_preference: string | null
           current_day: number | null
           email: string
           journey_start_date: string | null
-          profile_locked: boolean | null
+          last_practice_date: string | null
           total_poses_practiced: number | null
           total_practice_time: number | null
         }
         Insert: {
           completed_days?: number[] | null
-          cooldown_preference?: string | null
           current_day?: number | null
           email: string
           journey_start_date?: string | null
-          profile_locked?: boolean | null
+          last_practice_date?: string | null
           total_poses_practiced?: number | null
           total_practice_time?: number | null
         }
         Update: {
           completed_days?: number[] | null
-          cooldown_preference?: string | null
           current_day?: number | null
           email?: string
           journey_start_date?: string | null
-          profile_locked?: boolean | null
+          last_practice_date?: string | null
           total_poses_practiced?: number | null
           total_practice_time?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "user_progress_email_fkey"
+            foreignKeyName: "user_journey_email_fkey"
             columns: ["email"]
             isOneToOne: true
             referencedRelation: "user_details"
@@ -128,47 +104,20 @@ export type Database = {
           },
         ]
       }
-      video_files: {
-        Row: {
-          category: string | null
-          day_number: number | null
-          id: string
-          pose_benefits: string[] | null
-          pose_description: string | null
-          pose_image: string | null
-          pose_name: string
-          pose_steps: string[] | null
-          pose_video: string | null
-        }
-        Insert: {
-          category?: string | null
-          day_number?: number | null
-          id?: string
-          pose_benefits?: string[] | null
-          pose_description?: string | null
-          pose_image?: string | null
-          pose_name: string
-          pose_steps?: string[] | null
-          pose_video?: string | null
-        }
-        Update: {
-          category?: string | null
-          day_number?: number | null
-          id?: string
-          pose_benefits?: string[] | null
-          pose_description?: string | null
-          pose_image?: string | null
-          pose_name?: string
-          pose_steps?: string[] | null
-          pose_video?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      complete_day: {
+        Args: {
+          user_email: string
+          day_number: number
+          poses_count: number
+          practice_minutes: number
+        }
+        Returns: undefined
+      }
       create_or_update_user_details: {
         Args: {
           p_email: string

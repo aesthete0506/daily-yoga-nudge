@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://kwgyfuzqrsooyidmjksv.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3Z3lmdXpxcnNvb3lpZG1qa3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDczMDA3OTgsImV4cCI6MjA2Mjg3Njc5OH0.xMn8OA8vwmiVA7mz_4Uys5wcv7naNYyPh4g6oV2Ty1s';
 
-// Create the Supabase client with real-time updates and no caching
+// Create the Supabase client with real-time updates
 export const supabase = createClient(
   supabaseUrl,
   supabaseAnonKey,
@@ -17,13 +17,6 @@ export const supabase = createClient(
     db: {
       schema: 'public',
     },
-    global: {
-      headers: { 
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      },
-    },
     realtime: {
       params: {
         eventsPerSecond: 10,
@@ -32,131 +25,142 @@ export const supabase = createClient(
   }
 );
 
-// Enable public access temporarily - this is needed to bypass RLS policies for anonymous users
-export const enablePublicAccess = async () => {
-  try {
-    const { error: rpcError } = await supabase.rpc('create_user_if_not_exists', { 
-      user_email: localStorage.getItem('userEmail') || 'temp@example.com' 
-    });
-    
-    if (rpcError) {
-      console.log("Using fallback method for data access");
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Could not enable public access:", error);
-    return false;
-  }
+// Database types for new schema
+export type UserDetails = {
+  email: string;
+  experience_level: 'beginner' | 'intermediate' | 'advanced';
+  session_duration: number; // in minutes
+  practice_days: string[];
+  reminder_time: string; // HH:MM format
+  created_at?: string;
 };
 
-// Function to fetch video files with real-time updates and cache busting
-export const getVideoFiles = async (category?: 'beginner' | 'intermediate' | 'advanced'): Promise<VideoFile[]> => {
+export type ContentLibrary = {
+  id?: string;
+  day: number;
+  experience_level: 'beginner' | 'intermediate' | 'advanced';
+  asana_name: string;
+  video_url: string;
+  benefits?: string;
+  muscles_impacted?: string;
+};
+
+export type UserJourney = {
+  email: string;
+  completed_days: number[];
+  total_poses_practiced: number;
+  total_practice_time: number; // in minutes
+  current_day: number;
+  journey_start_date?: string;
+  last_practice_date?: string;
+};
+
+// Get content for a specific day and experience level
+export const getDayContent = async (day: number, experienceLevel: 'beginner' | 'intermediate' | 'advanced'): Promise<ContentLibrary[]> => {
   try {
-    await enablePublicAccess();
-    
-    let query = supabase
-      .from('video_files')
-      .select('*');
-    
-    if (category) {
-      query = query.eq('category', category);
-    }
-    
-    // Add random parameter to bust cache
-    const timestamp = Date.now();
-    console.log(`Fetching video files at ${timestamp}`);
-    
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .from('content_library')
+      .select('*')
+      .eq('day', day)
+      .eq('experience_level', experienceLevel)
+      .order('asana_name');
     
     if (error) {
-      console.error("Error fetching video files:", error);
+      console.error('Error fetching day content:', error);
       return [];
     }
     
-    console.log("Fetched video files:", data);
     return data || [];
   } catch (error) {
-    console.error("Error in getVideoFiles:", error);
+    console.error('Error in getDayContent:', error);
     return [];
   }
 };
 
-// Function to fetch user's yoga poses with real-time updates
-export const getUserYogaPoses = async (email: string): Promise<VideoFile[]> => {
+// Get user details
+export const getUserDetails = async (email: string): Promise<UserDetails | null> => {
   try {
-    await enablePublicAccess();
-    
-    // Get user progress to find which poses they've practiced
-    const { data: progressData, error: progressError } = await supabase
-      .from('user_progress')
+    const { data, error } = await supabase
+      .from('user_details')
       .select('*')
       .eq('email', email)
       .single();
     
-    if (progressError && progressError.code !== 'PGRST116') {
-      console.error("Error fetching user progress:", progressError);
-      return [];
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching user details:', error);
+      return null;
     }
     
-    // Get all videos in the user's experience level
-    const { data: userData, error: userError } = await supabase
-      .from('user_details')
-      .select('experience_level')
-      .eq('email', email)
-      .single();
-      
-    if (userError) {
-      console.error("Error fetching user details:", userError);
-      return [];
-    }
-    
-    const experienceLevel = userData?.experience_level || 'beginner';
-    
-    // Get all videos for the user's experience level with cache busting
-    return await getVideoFiles(experienceLevel as 'beginner' | 'intermediate' | 'advanced');
+    return data;
   } catch (error) {
-    console.error("Error in getUserYogaPoses:", error);
-    return [];
+    console.error('Error in getUserDetails:', error);
+    return null;
   }
 };
 
-// Database types based on the tables
-export type UserDetail = {
-  email: string;
-  experience_level: 'beginner' | 'intermediate' | 'advanced' | null;
-  session_duration: 'short' | 'medium' | 'long' | null;
-  practice_days: string[];
-  reminder_time: string | null;
-  created_at?: string;
+// Get user journey
+export const getUserJourney = async (email: string): Promise<UserJourney | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_journey')
+      .select('*')
+      .eq('email', email)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching user journey:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in getUserJourney:', error);
+    return null;
+  }
 };
 
-export type UserProgress = {
-  email: string;
-  completed_days: number[];
-  total_poses_practiced: number;
-  total_practice_time: number;
-  current_day: number;
-  profile_locked: boolean;
-  cooldown_preference: 'auto' | 'manual';
+// Save user details
+export const saveUserDetails = async (userDetails: UserDetails): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_details')
+      .upsert(userDetails);
+    
+    if (error) {
+      console.error('Error saving user details:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in saveUserDetails:', error);
+    return false;
+  }
 };
 
-export type VideoFile = {
-  id?: string;
-  category: 'beginner' | 'intermediate' | 'advanced';
-  day_number?: number;
-  pose_name: string;
-  pose_image: string;
-  pose_video: string;
-  pose_description?: string;
-  pose_benefits?: string[];
-  pose_steps?: string[];
-};
-
-export type ScheduleEntry = {
-  id?: string;
-  category: 'beginner' | 'intermediate' | 'advanced';
-  day_number: number;
-  pose_names: string[];
-  completion_status: 'locked' | 'available' | 'completed';
+// Complete a day (calls the database function)
+export const completeDay = async (
+  userEmail: string, 
+  dayNumber: number, 
+  posesCount: number, 
+  practiceMinutes: number
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { error } = await supabase.rpc('complete_day', {
+      user_email: userEmail,
+      day_number: dayNumber,
+      poses_count: posesCount,
+      practice_minutes: practiceMinutes
+    });
+    
+    if (error) {
+      console.error('Error completing day:', error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error in completeDay:', error);
+    return { success: false, error: 'Failed to complete day' };
+  }
 };
