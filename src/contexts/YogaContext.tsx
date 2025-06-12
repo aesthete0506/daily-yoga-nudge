@@ -1,20 +1,20 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase, UserDetails, UserJourney, getUserDetails, getUserJourney, saveUserDetails } from '../lib/supabase';
 import { toast } from '@/components/ui/sonner';
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+export type SessionDuration = "short" | "medium" | "long" | number;
 
 interface YogaContextType {
   userEmail: string | null;
   setUserEmail: (email: string | null) => void;
   experienceLevel: ExperienceLevel | null;
-  sessionDuration: number | null; // in minutes
+  sessionDuration: SessionDuration | null; // in minutes
   practiceDays: WeekDay[];
   reminderTime: string | null;
   setExperienceLevel: (level: ExperienceLevel) => void;
-  setSessionDuration: (duration: number) => void;
+  setSessionDuration: (duration: SessionDuration) => void;
   togglePracticeDay: (day: WeekDay) => void;
   setReminderTime: (time: string) => void;
   currentStep: number;
@@ -37,7 +37,7 @@ const YogaContext = createContext<YogaContextType | undefined>(undefined);
 export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | null>(null);
-  const [sessionDuration, setSessionDuration] = useState<number | null>(null);
+  const [sessionDuration, setSessionDuration] = useState<SessionDuration | null>(null);
   const [practiceDays, setPracticeDays] = useState<WeekDay[]>([]);
   const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);

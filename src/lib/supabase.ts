@@ -35,6 +35,9 @@ export type UserDetails = {
   created_at?: string;
 };
 
+// Legacy type alias for backward compatibility
+export type UserDetail = UserDetails;
+
 export type ContentLibrary = {
   id?: string;
   day: number;
@@ -43,6 +46,13 @@ export type ContentLibrary = {
   video_url: string;
   benefits?: string;
   muscles_impacted?: string;
+};
+
+// Legacy type alias for backward compatibility
+export type VideoFile = ContentLibrary & {
+  pose_name: string;
+  pose_image?: string;
+  pose_video?: string;
 };
 
 export type UserJourney = {
@@ -73,6 +83,46 @@ export const getDayContent = async (day: number, experienceLevel: 'beginner' | '
     return data || [];
   } catch (error) {
     console.error('Error in getDayContent:', error);
+    return [];
+  }
+};
+
+// Legacy function for backward compatibility
+export const getVideoFiles = async (experienceLevel: 'beginner' | 'intermediate' | 'advanced'): Promise<VideoFile[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('content_library')
+      .select('*')
+      .eq('experience_level', experienceLevel)
+      .order('day');
+    
+    if (error) {
+      console.error('Error fetching video files:', error);
+      return [];
+    }
+    
+    // Convert ContentLibrary to VideoFile format
+    return (data || []).map(item => ({
+      ...item,
+      pose_name: item.asana_name,
+      pose_video: item.video_url
+    }));
+  } catch (error) {
+    console.error('Error in getVideoFiles:', error);
+    return [];
+  }
+};
+
+// Legacy function for backward compatibility
+export const getUserYogaPoses = async (userEmail: string): Promise<VideoFile[]> => {
+  try {
+    // Get user details first to determine experience level
+    const userDetails = await getUserDetails(userEmail);
+    if (!userDetails) return [];
+    
+    return await getVideoFiles(userDetails.experience_level);
+  } catch (error) {
+    console.error('Error in getUserYogaPoses:', error);
     return [];
   }
 };

@@ -21,6 +21,10 @@ const PracticePlanDialog = ({ open, onOpenChange }: PracticePlanDialogProps) => 
 
   // Format the session duration for display
   const getDurationText = () => {
+    if (typeof sessionDuration === 'number') {
+      return `${sessionDuration} minutes`;
+    }
+    
     switch (sessionDuration) {
       case "short":
         return "0-10 minutes";
@@ -29,7 +33,7 @@ const PracticePlanDialog = ({ open, onOpenChange }: PracticePlanDialogProps) => 
       case "long":
         return "20+ minutes";
       default:
-        return "";
+        return "Not set";
     }
   };
 
