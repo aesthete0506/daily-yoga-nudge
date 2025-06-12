@@ -17,6 +17,7 @@ export type Database = {
           experience_level: string
           id: string
           muscles_impacted: string | null
+          video_duration: number | null
           video_url: string
         }
         Insert: {
@@ -26,6 +27,7 @@ export type Database = {
           experience_level: string
           id?: string
           muscles_impacted?: string | null
+          video_duration?: number | null
           video_url: string
         }
         Update: {
@@ -35,6 +37,7 @@ export type Database = {
           experience_level?: string
           id?: string
           muscles_impacted?: string | null
+          video_duration?: number | null
           video_url?: string
         }
         Relationships: []

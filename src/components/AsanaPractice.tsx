@@ -25,8 +25,7 @@ interface AsanaPracticeProps {
 
 const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPracticeProps) => {
   const [currentAsanaIndex, setCurrentAsanaIndex] = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(2); // 2 seconds for testing
+  const [practiceStarted, setPracticeStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [asanaComplete, setAsanaComplete] = useState(false);
   const { toast } = useToast();
@@ -67,25 +66,12 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
     "Child's Pose": "Gentle resting pose that helps calm the brain and relieve stress. Elongates the back and helps relieve tension in the shoulders, chest, and lower back."
   };
 
-  useEffect(() => {
-    let timer: number;
-    if (timerActive && timeRemaining > 0) {
-      timer = window.setTimeout(() => {
-        setTimeRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (timerActive && timeRemaining === 0) {
-      setTimerActive(false);
-      setAsanaComplete(true);
-    }
-    return () => clearTimeout(timer);
-  }, [timerActive, timeRemaining]);
-
   const handleStart = () => {
-    setTimerActive(true);
+    setPracticeStarted(true);
   };
 
-  const handleStop = () => {
-    setTimerActive(false);
+  const handleVideoEnd = () => {
+    setAsanaComplete(true);
   };
 
   const handleNext = () => {
@@ -93,56 +79,66 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
       // Complete the practice
       setCompleted(true);
       
-      // Update progress stats - 0.1 minutes per asana (6 seconds) for testing
-      completeDay(dayNumber, dayContent.length, dayContent.length * 0.1);
+      // Calculate total practice time based on video durations
+      const totalTime = dayContent.reduce((sum, content) => sum + (content.video_duration || 180), 0);
+      const totalMinutes = totalTime / 60;
+      
+      completeDay(dayNumber, dayContent.length, totalMinutes);
       
       toast({
         title: "Congratulations!",
         description: "You've completed your yoga practice for today.",
       });
 
-      // In a real app, you would update the user's progress here
       setTimeout(() => {
-        onOpenChange(false); // Close dialog after completion
+        onOpenChange(false);
       }, 3000);
     } else {
       // Move to next asana
       setCurrentAsanaIndex(prev => prev + 1);
-      setTimeRemaining(2); // Reset to 2 seconds for testing
       setAsanaComplete(false);
+      setPracticeStarted(false);
     }
   };
 
   const handleRepeat = () => {
-    setTimeRemaining(2); // Reset to 2 seconds for testing
     setAsanaComplete(false);
+    setPracticeStarted(false);
   };
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setCurrentAsanaIndex(0);
+      setPracticeStarted(false);
+      setAsanaComplete(false);
+      setCompleted(false);
+    }
+  }, [open]);
 
   if (completed) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle>Practice Complete!</DialogTitle>
-            <DialogDescription>Day {dayNumber} completed successfully</DialogDescription>
+            <DialogTitle className="text-headline">Practice Complete!</DialogTitle>
+            <DialogDescription className="text-normal">Day {dayNumber} completed successfully</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6 space-y-4">
             <div className="rounded-full bg-green-100 p-3">
               <Check className="h-6 w-6 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold">Thanks for doing it today!</h3>
-            <p className="text-center text-muted-foreground">
+            <h3 className="text-xl font-bold text-headline">Thanks for doing it today!</h3>
+            <p className="text-center text-normal">
               Your yoga is done for today. Come back tomorrow to continue your journey.
             </p>
           </div>
-          <Button onClick={() => onOpenChange(false)}>Return to Dashboard</Button>
+          <Button 
+            onClick={() => onOpenChange(false)}
+            className="bg-primary text-white hover:bg-primary/90"
+          >
+            Return to Dashboard
+          </Button>
         </DialogContent>
       </Dialog>
     );
@@ -151,12 +147,17 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
   if (!currentAsana) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle>No Content Available</DialogTitle>
-            <DialogDescription>No asanas found for Day {dayNumber}</DialogDescription>
+            <DialogTitle className="text-headline">No Content Available</DialogTitle>
+            <DialogDescription className="text-normal">No asanas found for Day {dayNumber}</DialogDescription>
           </DialogHeader>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button 
+            onClick={() => onOpenChange(false)}
+            className="bg-primary text-white hover:bg-primary/90"
+          >
+            Close
+          </Button>
         </DialogContent>
       </Dialog>
     );
@@ -164,25 +165,33 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl bg-white">
         <DialogHeader>
-          <DialogTitle>Day {dayNumber} - {currentAsana.asana_name}</DialogTitle>
-          <DialogDescription>Complete each pose to progress</DialogDescription>
+          <DialogTitle className="text-headline">Day {dayNumber} - {currentAsana.asana_name}</DialogTitle>
+          <DialogDescription className="text-normal">Complete each pose to progress</DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Video display - only shows in practice mode, uses the YogaVideoPlayer component */}
-          <YogaVideoPlayer content={currentAsana} />
+          {/* Video display */}
+          <YogaVideoPlayer 
+            content={currentAsana} 
+            autoPlay={practiceStarted}
+            onVideoEnd={handleVideoEnd}
+            onNext={handleNext}
+            showNextButton={true}
+          />
 
           {/* Hover buttons */}
           <div className="flex space-x-2">
             <HoverCard>
               <HoverCardTrigger asChild>
-                <Button variant="outline" className="flex-1">Steps</Button>
+                <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-white">
+                  Steps
+                </Button>
               </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <h4 className="font-medium mb-2">Steps for {currentAsana.asana_name}</h4>
-                <ol className="list-decimal list-inside space-y-1 text-sm">
+              <HoverCardContent className="w-80 bg-white">
+                <h4 className="font-medium mb-2 text-headline">Steps for {currentAsana.asana_name}</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-normal">
                   {asanaSteps[currentAsana.asana_name as keyof typeof asanaSteps]?.map((step, i) => (
                     <li key={i}>{step}</li>
                   )) || <li>Steps not available</li>}
@@ -192,41 +201,48 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
 
             <HoverCard>
               <HoverCardTrigger asChild>
-                <Button variant="outline" className="flex-1">Details</Button>
+                <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-white">
+                  Details
+                </Button>
               </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <h4 className="font-medium mb-2">About {currentAsana.asana_name}</h4>
-                <p className="text-sm">
+              <HoverCardContent className="w-80 bg-white">
+                <h4 className="font-medium mb-2 text-headline">About {currentAsana.asana_name}</h4>
+                <p className="text-sm text-normal">
                   {currentAsana.benefits || asanaDetails[currentAsana.asana_name as keyof typeof asanaDetails] || "Details not available"}
                 </p>
               </HoverCardContent>
             </HoverCard>
           </div>
 
-          {/* Timer display */}
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">Time Remaining</span>
-              <span className="text-sm font-medium">{formatTime(timeRemaining)}</span>
-            </div>
-            <Progress value={(timeRemaining / 2) * 100} className="h-2" />
-          </div>
-
           {/* Action buttons */}
           <div className="space-y-2">
-            {!asanaComplete ? (
+            {!practiceStarted ? (
               <Button 
-                className="w-full" 
-                onClick={timerActive ? handleStop : handleStart}
+                className="w-full bg-primary text-white hover:bg-primary/90" 
+                onClick={handleStart}
               >
-                {timerActive ? "Stop" : "Start"}
+                Start Practice
+              </Button>
+            ) : !asanaComplete ? (
+              <Button 
+                className="w-full bg-primary text-white hover:bg-primary/90" 
+                disabled
+              >
+                Practice in Progress...
               </Button>
             ) : (
               <div className="flex space-x-2">
-                <Button variant="outline" className="flex-1" onClick={handleRepeat}>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-primary text-primary hover:bg-primary hover:text-white" 
+                  onClick={handleRepeat}
+                >
                   Repeat
                 </Button>
-                <Button className="flex-1" onClick={handleNext}>
+                <Button 
+                  className="flex-1 bg-primary text-white hover:bg-primary/90" 
+                  onClick={handleNext}
+                >
                   {isLastAsana ? "Complete" : "Next"}
                 </Button>
               </div>
@@ -238,7 +254,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
             {dayContent.map((_, i) => (
               <div 
                 key={i} 
-                className={`h-2 w-8 rounded-full ${i === currentAsanaIndex ? 'bg-primary' : 'bg-muted'}`}
+                className={`h-2 w-8 rounded-full ${i === currentAsanaIndex ? 'bg-primary' : 'bg-gray-300'}`}
               />
             ))}
           </div>

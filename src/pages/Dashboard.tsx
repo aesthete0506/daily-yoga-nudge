@@ -70,7 +70,7 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#edf2f5' }}>
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h2 className="text-xl font-medium mb-2 text-headline">Loading your dashboard...</h2>
           <p className="text-normal">Just a moment while we prepare your practice</p>
@@ -112,9 +112,18 @@ const Dashboard = () => {
     return 'locked';
   };
 
+  const getCalendarText = (day: number) => {
+    const status = getDayStatus(day);
+    if (status === 'locked') return 'Unlocking Soon';
+    return dayMuscles[day] || 'Loading...';
+  };
+
+  // Check if all 30 days are completed
+  const isJourneyComplete = completedDays.length === 30;
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#edf2f5' }}>
-      <header className="w-full shadow-sm py-4 px-4 sm:px-6" style={{ backgroundColor: '#ffffff' }}>
+    <div className="min-h-screen bg-background">
+      <header className="w-full shadow-sm py-4 px-4 sm:px-6 bg-white">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Logo />
           <div className="flex gap-2">
@@ -130,10 +139,17 @@ const Dashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
-        <h1 className="text-3xl font-bold mb-8 text-headline">Your 30-Day Yoga Journey</h1>
+        {isJourneyComplete ? (
+          <div className="text-center mb-8 p-8 bg-white rounded-lg shadow-sm">
+            <h1 className="text-4xl font-bold mb-4 text-headline">🎉 Congratulations! 🎉</h1>
+            <p className="text-xl text-normal">You did it! 30 Days Completed. Keep going strong.</p>
+          </div>
+        ) : (
+          <h1 className="text-3xl font-bold mb-8 text-headline">Your 30-Day Yoga Journey</h1>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 card">
+          <Card className="p-6 bg-white shadow-sm border-0">
             <h2 className="text-xl font-semibold mb-4 text-headline">Progress Stats</h2>
             <div className="space-y-3">
               <div>
@@ -155,27 +171,26 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-6" style={{ backgroundColor: '#4c3f68', color: '#ffffff' }}>
-            <h2 className="text-xl font-semibold mb-4" style={{ color: '#ffffff' }}>Today's Practice</h2>
-            <p className="mb-6" style={{ color: '#ffffff' }}>
-              Day {currentDay} - {dayMuscles[currentDay] ? `Working on: ${dayMuscles[currentDay]}` : 'Your personalized yoga session is ready!'}
+          <Card className="p-6 bg-primary text-white shadow-sm border-0">
+            <h2 className="text-xl font-semibold mb-4 text-white">Today's Practice</h2>
+            <p className="mb-6 text-white">
+              {isJourneyComplete ? (
+                'Journey Complete!'
+              ) : (
+                `Day ${currentDay} - ${dayMuscles[currentDay] ? `Working on: ${dayMuscles[currentDay]}` : 'Your personalized yoga session is ready!'}`
+              )}
             </p>
             <Button 
               variant="secondary" 
-              className="w-full"
+              className="w-full bg-white text-primary border-0 hover:bg-gray-100"
               onClick={() => handleDayClick(currentDay)}
-              disabled={hasCompletedToday}
-              style={{ 
-                backgroundColor: '#ffffff', 
-                color: '#4c3f68',
-                border: 'none'
-              }}
+              disabled={hasCompletedToday || isJourneyComplete}
             >
-              {hasCompletedToday ? '✅ Completed Today!' : `Start Day ${currentDay}`}
+              {isJourneyComplete ? '🎉 Journey Complete!' : hasCompletedToday ? '✅ Completed Today!' : `Start Day ${currentDay}`}
             </Button>
           </Card>
 
-          <Card className="p-6 card">
+          <Card className="p-6 bg-white shadow-sm border-0">
             <h2 className="text-xl font-semibold mb-4 text-headline">Journey Progress</h2>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -184,11 +199,8 @@ const Dashboard = () => {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="h-2 rounded-full transition-all duration-300" 
-                  style={{ 
-                    width: `${(completedDays.length / 30) * 100}%`,
-                    backgroundColor: '#4c3f68'
-                  }}
+                  className="h-2 rounded-full transition-all duration-300 bg-primary" 
+                  style={{ width: `${(completedDays.length / 30) * 100}%` }}
                 ></div>
               </div>
             </div>
@@ -207,8 +219,8 @@ const Dashboard = () => {
               return (
                 <Card 
                   key={day} 
-                  className={`day-tile cursor-pointer transition-all ${
-                    isCompleted ? 'completed' : isLocked ? 'locked' : ''
+                  className={`p-4 h-24 cursor-pointer transition-all bg-white shadow-sm border-0 hover:shadow-md ${
+                    isCompleted ? 'ring-2 ring-green-500' : isLocked ? 'opacity-60' : 'hover:ring-2 hover:ring-primary'
                   }`}
                   onClick={() => handleDayClick(day)}
                 >
@@ -221,11 +233,8 @@ const Dashboard = () => {
                     </div>
                     
                     <div className="text-xs text-normal">
-                      {dayMuscles[day] && (
-                        <p className="mb-1">Working on:</p>
-                      )}
                       <p className="font-medium text-headline">
-                        {dayMuscles[day] || 'Loading...'}
+                        {getCalendarText(day)}
                       </p>
                     </div>
                   </div>

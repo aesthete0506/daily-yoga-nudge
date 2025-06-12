@@ -44,6 +44,7 @@ export type ContentLibrary = {
   experience_level: 'beginner' | 'intermediate' | 'advanced';
   asana_name: string;
   video_url: string;
+  video_duration?: number; // in seconds
   benefits?: string;
   muscles_impacted?: string;
 };
