@@ -5,45 +5,14 @@ import YogaCard from "@/components/YogaCard";
 import OnboardingSteps from "@/components/onboarding/OnboardingSteps";
 import SignInScreen from "@/components/SignInScreen";
 import { useYoga } from "@/contexts/YogaContext";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 
 const Index = () => {
-  const { currentStep, setCurrentStep, isProfileLocked, userEmail, setUserEmail, experienceLevel, sessionDuration } = useYoga();
-  const navigate = useNavigate();
-
-  // If user has completed profile, redirect to dashboard
-  useEffect(() => {
-    if (userEmail && experienceLevel && sessionDuration && isProfileLocked) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [userEmail, experienceLevel, sessionDuration, isProfileLocked, navigate]);
+  const { currentStep, setCurrentStep, isProfileLocked, userEmail, setUserEmail } = useYoga();
 
   const handleSignIn = (email: string) => {
     setUserEmail(email);
     setCurrentStep(0); // Move to onboarding after sign-in
   };
-
-  // If no user email, show sign in (this shouldn't happen due to routing, but safety check)
-  if (!userEmail) {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#edf2f5' }}>
-        <header className="w-full py-6 px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <Logo />
-          </div>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-          <div className="w-full max-w-3xl">
-            <YogaCard>
-              <SignInScreen onSignIn={handleSignIn} />
-            </YogaCard>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#edf2f5' }}>
@@ -55,7 +24,11 @@ const Index = () => {
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-3xl">
-          {currentStep === -1 ? (
+          {!userEmail ? (
+            <YogaCard>
+              <SignInScreen onSignIn={handleSignIn} />
+            </YogaCard>
+          ) : currentStep === -1 ? (
             <YogaCard>
               <div className="text-center space-y-6">
                 <h1 className="text-3xl font-bold text-headline">Welcome to YourDOST Guided Yoga</h1>
@@ -100,24 +73,24 @@ const Index = () => {
                 </p>
               </div>
             </YogaCard>
-          ) : isProfileLocked ? (
-            <YogaCard>
-              <div className="text-center space-y-4">
-                <h2 className="text-2xl font-bold text-headline">Profile Locked</h2>
-                <p className="text-muted-foreground">
-                  Your preferences have been saved and locked. You can now access your 30-day journey!
-                </p>
-                <Button 
-                  onClick={() => navigate('/dashboard')}
-                  className="bg-primary text-white hover:opacity-90 transition-opacity"
-                >
-                  Go to Dashboard
-                </Button>
-              </div>
-            </YogaCard>
           ) : (
             <YogaCard>
-              <OnboardingSteps />
+              {isProfileLocked ? (
+                <div className="text-center space-y-4">
+                  <h2 className="text-2xl font-bold text-headline">Profile Locked</h2>
+                  <p className="text-muted-foreground">
+                    Your preferences have been saved and locked. You can now access your 30-day journey!
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="bg-primary text-white hover:opacity-90 transition-opacity"
+                  >
+                    Go to Dashboard
+                  </Button>
+                </div>
+              ) : (
+                <OnboardingSteps />
+              )}
             </YogaCard>
           )}
         </div>

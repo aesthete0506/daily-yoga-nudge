@@ -7,7 +7,7 @@ import { useYoga } from '@/contexts/YogaContext';
 export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { setUserEmail, setExperienceLevel, setSessionDuration, setReminderTime } = useYoga();
+  const { setUserEmail, setExperienceLevel, setSessionDuration, practiceDays, setReminderTime } = useYoga();
 
   // Initialize auth state on component mount
   useEffect(() => {
@@ -33,7 +33,8 @@ export const useAuth = () => {
             setUserEmail(storedEmail);
             setIsAuthenticated(true);
             
-            // Set user preferences from the fetched data
+            // Set user preferences directly from the fetched data
+            // This will prevent asking for preferences again
             if (data.experience_level) {
               setExperienceLevel(data.experience_level);
             }
@@ -46,12 +47,13 @@ export const useAuth = () => {
               setReminderTime(data.reminder_time);
             }
           } else {
-            // User doesn't exist in database but email is stored
+            // User doesn't exist
             localStorage.removeItem('userEmail');
             setIsAuthenticated(false);
           }
         } catch (err) {
           console.error('Auth initialization error:', err);
+          toast.error('Authentication error, please sign in again.');
           localStorage.removeItem('userEmail');
           setIsAuthenticated(false);
         }
@@ -67,80 +69,49 @@ export const useAuth = () => {
     setIsLoading(true);
     
     try {
-      console.log('Attempting login for email:', email);
-      
-      // Check if user exists in user_details
-      const { data: userDetails, error: userError } = await supabase
+      // Check if user exists
+      const { data, error } = await supabase
         .from('user_details')
         .select('*')
         .eq('email', email)
         .single();
       
-      if (userError && userError.code !== 'PGRST116') {
-        console.error('Login error checking user details:', userError);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Login error:', error);
         toast.error('Login failed. Please try again.');
         setIsAuthenticated(false);
         return false;
       }
       
-      // Check if user exists in user_journey
-      const { data: userJourney, error: journeyError } = await supabase
-        .from('user_journey')
-        .select('*')
-        .eq('email', email)
-        .single();
-      
-      if (journeyError && journeyError.code !== 'PGRST116') {
-        console.error('Login error checking user journey:', journeyError);
-      }
-      
-      // Store email in local storage and set user email
+      // Store email in local storage
       localStorage.setItem('userEmail', email);
       setUserEmail(email);
+      
+      // If user exists, load their preferences
+      if (data) {
+        setIsAuthenticated(true);
+        
+        if (data.experience_level) {
+          setExperienceLevel(data.experience_level);
+        }
+        
+        if (data.session_duration) {
+          setSessionDuration(data.session_duration);
+        }
+        
+        if (data.reminder_time) {
+          setReminderTime(data.reminder_time);
+        }
+        
+        return true;
+      }
+      
+      // New user
       setIsAuthenticated(true);
-      
-      // If user doesn't exist in user_journey, create an entry
-      if (!userJourney) {
-        console.log('Creating new user journey entry for:', email);
-        const { error: insertJourneyError } = await supabase
-          .from('user_journey')
-          .insert({
-            email: email,
-            current_day: 1,
-            completed_days: [],
-            total_poses_practiced: 0,
-            total_practice_time: 0,
-            streak_count: 0,
-            journey_start_date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }),
-            last_practice_date: null
-          });
-        
-        if (insertJourneyError) {
-          console.error('Error creating user journey:', insertJourneyError);
-        }
-      }
-      
-      // If user has complete profile (experience_level, session_duration, etc.), they're returning
-      if (userDetails && userDetails.experience_level && userDetails.session_duration) {
-        console.log('Existing user with complete profile, loading preferences');
-        
-        setExperienceLevel(userDetails.experience_level);
-        setSessionDuration(userDetails.session_duration);
-        
-        if (userDetails.reminder_time) {
-          setReminderTime(userDetails.reminder_time);
-        }
-        
-        return true; // Existing user - go to dashboard
-      }
-      
-      // New user or incomplete profile - needs onboarding
-      console.log('New user or incomplete profile, needs onboarding');
       return false;
     } catch (err) {
       console.error('Login error:', err);
       toast.error('Login failed. Please try again.');
-      setIsAuthenticated(false);
       return false;
     } finally {
       setIsLoading(false);
