@@ -9,7 +9,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Progress } from "@/components/ui/progress";
 import { Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useYoga } from "@/contexts/YogaContext";
@@ -27,51 +26,18 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
   const [currentAsanaIndex, setCurrentAsanaIndex] = useState(0);
   const [practiceStarted, setPracticeStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [asanaComplete, setAsanaComplete] = useState(false);
   const { toast } = useToast();
   const { completeDay } = useYoga();
 
   const currentAsana = dayContent[currentAsanaIndex];
   const isLastAsana = currentAsanaIndex === dayContent.length - 1;
 
-  // Steps for each asana - would come from a database in a real app
-  const asanaSteps = {
-    "Mountain Pose": [
-      "Stand with feet together",
-      "Distribute weight evenly",
-      "Arms at sides, palms forward",
-      "Engage leg muscles",
-      "Lengthen spine, relax shoulders"
-    ],
-    "Downward Dog": [
-      "Begin on hands and knees",
-      "Lift hips up and back",
-      "Straighten legs (without locking knees)",
-      "Press chest toward thighs",
-      "Relax head, gaze at navel"
-    ],
-    "Child's Pose": [
-      "Kneel on the floor, big toes touching",
-      "Sit back on heels",
-      "Extend arms forward",
-      "Rest forehead on mat",
-      "Breathe deeply and relax"
-    ]
-  };
-
-  // Details for each asana
-  const asanaDetails = {
-    "Mountain Pose": "Improves posture, balance, and body awareness. Strengthens thighs, knees, and ankles while firming abdomen and buttocks.",
-    "Downward Dog": "Energizes and rejuvenates the body. Stretches the hamstrings, calves, and shoulders while strengthening the arms and legs.",
-    "Child's Pose": "Gentle resting pose that helps calm the brain and relieve stress. Elongates the back and helps relieve tension in the shoulders, chest, and lower back."
-  };
-
   const handleStart = () => {
     setPracticeStarted(true);
   };
 
   const handleVideoEnd = () => {
-    setAsanaComplete(true);
+    // Auto-advance handled by video player
   };
 
   const handleNext = () => {
@@ -96,14 +62,8 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
     } else {
       // Move to next asana
       setCurrentAsanaIndex(prev => prev + 1);
-      setAsanaComplete(false);
-      setPracticeStarted(false);
+      setPracticeStarted(true); // Auto-start next video
     }
-  };
-
-  const handleRepeat = () => {
-    setAsanaComplete(false);
-    setPracticeStarted(false);
   };
 
   // Reset state when dialog closes
@@ -111,7 +71,6 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
     if (!open) {
       setCurrentAsanaIndex(0);
       setPracticeStarted(false);
-      setAsanaComplete(false);
       setCompleted(false);
     }
   }, [open]);
@@ -119,7 +78,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
   if (completed) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="sm:max-w-md bg-white rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-headline">Practice Complete!</DialogTitle>
             <DialogDescription className="text-normal">Day {dayNumber} completed successfully</DialogDescription>
@@ -135,7 +94,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
           </div>
           <Button 
             onClick={() => onOpenChange(false)}
-            className="bg-primary text-white hover:bg-primary/90"
+            className="bg-primary text-white hover:bg-primary/90 transition-colors rounded-lg"
           >
             Return to Dashboard
           </Button>
@@ -147,14 +106,14 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
   if (!currentAsana) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="sm:max-w-md bg-white rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-headline">No Content Available</DialogTitle>
             <DialogDescription className="text-normal">No asanas found for Day {dayNumber}</DialogDescription>
           </DialogHeader>
           <Button 
             onClick={() => onOpenChange(false)}
-            className="bg-primary text-white hover:bg-primary/90"
+            className="bg-primary text-white hover:bg-primary/90 transition-colors rounded-lg"
           >
             Close
           </Button>
@@ -165,7 +124,7 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl bg-white">
+      <DialogContent className="sm:max-w-xl bg-white rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-headline">Day {dayNumber} - {currentAsana.asana_name}</DialogTitle>
           <DialogDescription className="text-normal">Complete each pose to progress</DialogDescription>
@@ -185,31 +144,42 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
           <div className="flex space-x-2">
             <HoverCard>
               <HoverCardTrigger asChild>
-                <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-white">
+                <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-white transition-colors rounded-lg">
                   Steps
                 </Button>
               </HoverCardTrigger>
-              <HoverCardContent className="w-80 bg-white">
+              <HoverCardContent className="w-80 bg-white rounded-xl shadow-lg">
                 <h4 className="font-medium mb-2 text-headline">Steps for {currentAsana.asana_name}</h4>
                 <ol className="list-decimal list-inside space-y-1 text-sm text-normal">
-                  {asanaSteps[currentAsana.asana_name as keyof typeof asanaSteps]?.map((step, i) => (
+                  {currentAsana.pose_steps?.map((step, i) => (
                     <li key={i}>{step}</li>
-                  )) || <li>Steps not available</li>}
+                  )) || <li>Follow the video instructions</li>}
                 </ol>
               </HoverCardContent>
             </HoverCard>
 
             <HoverCard>
               <HoverCardTrigger asChild>
-                <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-white">
+                <Button variant="outline" className="flex-1 border-primary text-primary hover:bg-primary hover:text-white transition-colors rounded-lg">
                   Details
                 </Button>
               </HoverCardTrigger>
-              <HoverCardContent className="w-80 bg-white">
+              <HoverCardContent className="w-80 bg-white rounded-xl shadow-lg">
                 <h4 className="font-medium mb-2 text-headline">About {currentAsana.asana_name}</h4>
-                <p className="text-sm text-normal">
-                  {currentAsana.benefits || asanaDetails[currentAsana.asana_name as keyof typeof asanaDetails] || "Details not available"}
-                </p>
+                <div className="space-y-2 text-sm text-normal">
+                  {currentAsana.benefits && (
+                    <div>
+                      <p className="font-medium text-headline">Benefits:</p>
+                      <p>{currentAsana.benefits}</p>
+                    </div>
+                  )}
+                  {currentAsana.muscles_impacted && (
+                    <div>
+                      <p className="font-medium text-headline">Muscles Targeted:</p>
+                      <p>{currentAsana.muscles_impacted}</p>
+                    </div>
+                  )}
+                </div>
               </HoverCardContent>
             </HoverCard>
           </div>
@@ -218,34 +188,18 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
           <div className="space-y-2">
             {!practiceStarted ? (
               <Button 
-                className="w-full bg-primary text-white hover:bg-primary/90" 
+                className="w-full bg-primary text-white hover:bg-primary/90 transition-colors rounded-lg" 
                 onClick={handleStart}
               >
                 Start Practice
               </Button>
-            ) : !asanaComplete ? (
+            ) : (
               <Button 
-                className="w-full bg-primary text-white hover:bg-primary/90" 
+                className="w-full bg-primary text-white transition-colors rounded-lg" 
                 disabled
               >
-                Practice in Progress...
+                Practice in Progress... (Auto-advancing)
               </Button>
-            ) : (
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 border-primary text-primary hover:bg-primary hover:text-white" 
-                  onClick={handleRepeat}
-                >
-                  Repeat
-                </Button>
-                <Button 
-                  className="flex-1 bg-primary text-white hover:bg-primary/90" 
-                  onClick={handleNext}
-                >
-                  {isLastAsana ? "Complete" : "Next"}
-                </Button>
-              </div>
             )}
           </div>
 
@@ -254,7 +208,10 @@ const AsanaPractice = ({ open, onOpenChange, dayNumber, dayContent }: AsanaPract
             {dayContent.map((_, i) => (
               <div 
                 key={i} 
-                className={`h-2 w-8 rounded-full ${i === currentAsanaIndex ? 'bg-primary' : 'bg-gray-300'}`}
+                className={`h-2 w-8 rounded-full transition-colors ${
+                  i === currentAsanaIndex ? 'bg-primary' : 
+                  i < currentAsanaIndex ? 'bg-green-500' : 'bg-gray-300'
+                }`}
               />
             ))}
           </div>

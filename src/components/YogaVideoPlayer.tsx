@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, SkipForward, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 import { ContentLibrary } from '@/lib/supabase';
 
 interface YogaVideoPlayerProps {
@@ -22,24 +22,28 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
   showNextButton = false
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
   const [cooldownActive, setCooldownActive] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(10);
   const [duration, setDuration] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const cooldownRef = useRef<NodeJS.Timeout>();
   const timerRef = useRef<NodeJS.Timeout>();
 
   // Reset state when video changes
   useEffect(() => {
     setIsPlaying(false);
-    setIsLoaded(false);
     setCooldownActive(false);
     setCooldownTime(10);
     setDuration(content?.video_duration || 0);
     setTimeRemaining(content?.video_duration || 0);
   }, [content]);
+
+  // Auto-start video when autoPlay is enabled
+  useEffect(() => {
+    if (autoPlay && content && !isPlaying) {
+      setIsPlaying(true);
+    }
+  }, [autoPlay, content]);
 
   // Timer for tracking remaining time
   useEffect(() => {
@@ -68,6 +72,10 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
     
     if (isPlaying) {
       setIsPlaying(false);
+      // Clear timer when pausing
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     } else {
       setIsPlaying(true);
       // If video ended, restart
@@ -77,17 +85,10 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
     }
   };
 
-  const handleVideoLoaded = () => {
-    setIsLoaded(true);
-    if (autoPlay && content) {
-      setIsPlaying(true);
-    }
-  };
-
   const handleVideoEnded = () => {
     setIsPlaying(false);
     
-    // Start cooldown
+    // Start cooldown and auto-advance
     setCooldownActive(true);
     setCooldownTime(10);
     
@@ -97,6 +98,10 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
           setCooldownActive(false);
           clearInterval(cooldownRef.current);
           if (onVideoEnd) onVideoEnd();
+          // Auto-advance to next pose
+          if (onNext) {
+            setTimeout(() => onNext(), 100);
+          }
           return 0;
         }
         return prev - 1;
@@ -116,6 +121,9 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
     setTimeRemaining(content?.video_duration || 0);
     setIsPlaying(false);
     setCooldownActive(false);
+    if (cooldownRef.current) {
+      clearInterval(cooldownRef.current);
+    }
   };
 
   useEffect(() => {
@@ -129,7 +137,6 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
     };
   }, []);
 
-  // Extract YouTube video ID and create embed URL
   const getYouTubeEmbedUrl = (url: string) => {
     const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
     return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=${isPlaying ? 1 : 0}&rel=0&controls=0&showinfo=0&modestbranding=1` : null;
@@ -143,7 +150,7 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
 
   if (!content) {
     return (
-      <Card className="overflow-hidden bg-white shadow-sm border-0">
+      <Card className="overflow-hidden bg-white shadow-sm border-0 rounded-xl">
         <AspectRatio ratio={16 / 9}>
           <div className="flex items-center justify-center h-full bg-gray-100">
             <p className="text-normal">No video available</p>
@@ -156,18 +163,17 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
   const embedUrl = getYouTubeEmbedUrl(content.video_url);
 
   return (
-    <Card className="overflow-hidden bg-white shadow-sm border-0">
+    <Card className="overflow-hidden bg-white shadow-sm border-0 rounded-xl">
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
           {embedUrl ? (
-            <div className="relative w-full h-full bg-black">
+            <div className="relative w-full h-full bg-black rounded-xl overflow-hidden">
               <iframe
                 key={`${content.id}-${isPlaying}`}
                 src={`${embedUrl}&autoplay=${isPlaying ? 1 : 0}`}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                onLoad={handleVideoLoaded}
               />
               
               {/* Custom controls overlay */}
@@ -176,23 +182,21 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      variant="ghost"
                       onClick={handlePlayPause}
-                      className="text-white hover:bg-white/20"
+                      className="bg-orange-600 hover:bg-orange-700 text-white transition-colors rounded-lg"
                       disabled={cooldownActive}
                     >
                       {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
                       onClick={handleRepeat}
-                      className="text-white hover:bg-white/20"
+                      className="bg-orange-600 hover:bg-orange-700 text-white transition-colors rounded-lg"
                     >
                       <RotateCcw className="h-4 w-4" />
                     </Button>
                   </div>
-                  <span className="text-sm">
+                  <span className="text-sm font-medium">
                     {formatTime(timeRemaining)} / {formatTime(duration)}
                   </span>
                 </div>
@@ -207,7 +211,7 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="flex items-center justify-center h-full bg-gray-100 rounded-xl">
               <p className="text-normal">Video not available</p>
             </div>
           )}
@@ -215,17 +219,16 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
 
         {/* Cooldown overlay */}
         {cooldownActive && (
-          <div className="absolute inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center text-white">
+          <div className="absolute inset-0 bg-black bg-opacity-75 flex flex-col items-center justify-center text-white rounded-xl">
             <div className="text-center space-y-4">
               <h3 className="text-xl font-semibold">Great work!</h3>
-              <p className="text-lg">Next pose in {cooldownTime} seconds</p>
+              <p className="text-lg">Next pose starting in {cooldownTime} seconds</p>
               <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
               {showNextButton && (
                 <Button
                   onClick={handleNext}
-                  className="bg-primary text-white mt-4 hover:bg-primary/90"
+                  className="bg-orange-600 hover:bg-orange-700 text-white mt-4 transition-colors rounded-lg"
                 >
-                  <SkipForward className="h-4 w-4 mr-2" />
                   Skip to Next
                 </Button>
               )}
