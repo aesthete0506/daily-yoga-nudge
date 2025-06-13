@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
 import { useAuth } from "./hooks/use-auth";
+import { useYoga } from "./contexts/YogaContext";
 
 const queryClient = new QueryClient();
 
@@ -27,11 +28,12 @@ const ProtectedRoute = ({ element }: { element: React.ReactNode }) => {
     );
   }
   
-  return isAuthenticated ? element : <Navigate to="/login" />;
+  return isAuthenticated ? element : <Navigate to="/login" replace />;
 };
 
 const AppRoutes = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { experienceLevel, sessionDuration } = useYoga();
 
   if (isLoading) {
     return (
@@ -46,10 +48,20 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />
+        isAuthenticated ? (
+          // If authenticated, check if they have completed onboarding
+          experienceLevel && sessionDuration ? 
+            <Navigate to="/dashboard" replace /> : 
+            <Navigate to="/" replace />
+        ) : <LoginPage />
       } />
       <Route path="/" element={
-        isAuthenticated ? <Index /> : <Navigate to="/login" />
+        isAuthenticated ? (
+          // If they have experience level and session duration, go to dashboard
+          experienceLevel && sessionDuration ? 
+            <Navigate to="/dashboard" replace /> : 
+            <Index />
+        ) : <Navigate to="/login" replace />
       } />
       <Route path="/dashboard" element={
         <ProtectedRoute element={<Dashboard />} />

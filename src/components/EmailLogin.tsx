@@ -23,16 +23,19 @@ const EmailLogin = () => {
     setIsLoading(true);
 
     try {
-      const isExistingUser = await auth.login(email);
+      console.log('Submitting email:', email);
+      const isExistingUser = await auth.login(email.trim().toLowerCase());
       
       if (isExistingUser) {
-        // Existing user - redirect to dashboard
+        // Existing user with complete profile - redirect to dashboard
+        console.log('Existing user, redirecting to dashboard');
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       } else {
-        // New user - redirect to onboarding
+        // New user or incomplete profile - redirect to onboarding
+        console.log('New user or incomplete profile, redirecting to onboarding');
         toast.success("Welcome! Let's set up your practice");
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (error) {
       console.error("Error during login:", error);
@@ -60,12 +63,13 @@ const EmailLogin = () => {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               className="border-gray-200 focus:border-primary"
+              required
             />
           </div>
           <Button
             type="submit"
             className="w-full bg-primary text-white hover:bg-primary/90 transition-colors"
-            disabled={isLoading}
+            disabled={isLoading || !email.trim()}
           >
             {isLoading ? "Loading..." : "Continue"}
           </Button>
