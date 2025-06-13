@@ -6,14 +6,12 @@ import { toast } from "@/components/ui/sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import YogaCard from "./YogaCard";
-import { useYoga } from "@/contexts/YogaContext";
 
 const EmailLogin = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const auth = useAuth();
-  const { experienceLevel } = useYoga();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,14 +25,10 @@ const EmailLogin = () => {
     try {
       const isExistingUser = await auth.login(email);
       
-      if (isExistingUser && experienceLevel) {
-        // Existing user with preferences - redirect to dashboard
+      if (isExistingUser) {
+        // Existing user - redirect to dashboard
         toast.success("Welcome back!");
         navigate("/dashboard");
-      } else if (isExistingUser) {
-        // Existing user without complete preferences - redirect to onboarding
-        toast.success("Welcome back! Let's complete your profile");
-        navigate("/");
       } else {
         // New user - redirect to onboarding
         toast.success("Welcome! Let's set up your practice");
@@ -51,8 +45,8 @@ const EmailLogin = () => {
   return (
     <YogaCard>
       <CardHeader className="text-center">
-        <CardTitle>Welcome to YourDOST Guided Yoga</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-headline">Welcome to YourDOST Guided Yoga</CardTitle>
+        <CardDescription className="text-normal">
           Enter your email to continue your yoga journey
         </CardDescription>
       </CardHeader>
@@ -65,11 +59,12 @@ const EmailLogin = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              className="border-gray-200 focus:border-primary"
             />
           </div>
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-primary text-white hover:bg-primary/90 transition-colors"
             disabled={isLoading}
           >
             {isLoading ? "Loading..." : "Continue"}

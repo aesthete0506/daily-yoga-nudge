@@ -8,7 +8,7 @@ import { useYoga } from "@/contexts/YogaContext";
 import PracticePlanDialog from "@/components/PracticePlanDialog";
 import DayPlanDialog from "@/components/DayPlanDialog";
 import { toast } from "@/components/ui/sonner";
-import { CheckCircle, Lock, Play, Calendar } from 'lucide-react';
+import { CheckCircle, Lock, Play } from 'lucide-react';
 import { getDayContent } from "@/lib/supabase";
 import { Progress } from "@/components/ui/progress";
 
@@ -115,7 +115,6 @@ const Dashboard = () => {
 
   const handleDayClick = (day: number) => {
     if (hasCompletedToday && !completedDays.includes(day)) {
-      toast.error("✅ You've completed today's workout! Come back tomorrow to continue.");
       return;
     }
     
@@ -167,9 +166,8 @@ const Dashboard = () => {
           <Logo />
           <div className="flex gap-2">
             <Button 
-              variant="outline" 
               onClick={() => setPracticePlanOpen(true)}
-              className="border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+              className="bg-primary text-white hover:bg-primary/90 transition-colors"
             >
               Your Practice Plan
             </Button>
@@ -269,7 +267,7 @@ const Dashboard = () => {
               return (
                 <Card 
                   key={day} 
-                  className={`p-4 h-40 cursor-pointer transition-all duration-200 ${tileColor} shadow-sm border-0 rounded-xl hover:shadow-md hover:scale-105 ${
+                  className={`p-4 h-48 cursor-pointer transition-all duration-200 ${tileColor} shadow-sm border-0 rounded-xl hover:shadow-md hover:scale-105 ${
                     isCompleted ? 'ring-2 ring-green-500' : isLocked ? 'opacity-60' : 'hover:ring-2 hover:ring-primary'
                   }`}
                   onClick={() => handleDayClick(day)}
@@ -289,13 +287,13 @@ const Dashboard = () => {
                         <>
                           <div>
                             <p className="text-headline font-medium text-xs">Benefits:</p>
-                            <p className="text-headline/70 text-xs truncate">
+                            <p className="text-headline/70 text-xs">
                               {content?.benefits || 'Strength & Balance'}
                             </p>
                           </div>
                           <div>
                             <p className="text-headline font-medium text-xs">Muscles:</p>
-                            <p className="text-headline/70 text-xs truncate">
+                            <p className="text-headline/70 text-xs">
                               {content?.muscles || 'Full Body'}
                             </p>
                           </div>

@@ -93,26 +93,26 @@
   }
   
   .btn-primary {
-    background-color: var(--btn-primary);
-    color: var(--btn-text);
+    background-color: var(--btn-primary) !important;
+    color: var(--btn-text) !important;
     transition: all 0.2s ease-in-out;
   }
   
   .btn-primary:hover {
-    background-color: var(--btn-primary);
-    opacity: 0.9;
+    background-color: rgba(97, 78, 133, 0.9) !important;
+    color: var(--btn-text) !important;
     transform: translateY(-1px);
   }
   
   .btn-practice {
-    background-color: var(--btn-practice);
-    color: var(--btn-practice-text);
+    background-color: var(--btn-practice) !important;
+    color: var(--btn-practice-text) !important;
     transition: all 0.2s ease-in-out;
   }
   
   .btn-practice:hover {
-    background-color: var(--btn-practice);
-    opacity: 0.9;
+    background-color: rgba(242, 98, 14, 0.9) !important;
+    color: var(--btn-practice-text) !important;
     transform: translateY(-1px);
   }
   
@@ -153,30 +153,30 @@
     cursor: not-allowed;
   }
 
-  /* Enhanced button styles */
-  .custom-button {
-    transition: all 0.2s ease-in-out;
+  /* Enhanced button styles - Fixed hover behavior */
+  button {
+    position: relative;
+    transition: all 0.2s ease-in-out !important;
     border-radius: 0.5rem;
   }
 
-  .custom-button:hover {
+  button:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.15);
   }
 
-  .custom-button:active {
+  button:active {
     transform: translateY(0);
   }
 
-  /* Prevent button disappearing on hover */
-  button {
-    position: relative;
-    overflow: hidden;
+  /* Primary button styles */
+  .bg-primary {
+    background-color: var(--btn-primary) !important;
+    color: var(--btn-text) !important;
   }
 
-  button:hover {
-    opacity: 0.9 !important;
-    background-color: var(--btn-primary) !important;
+  .bg-primary:hover {
+    background-color: rgba(97, 78, 133, 0.9) !important;
     color: var(--btn-text) !important;
   }
 
@@ -192,30 +192,6 @@
       align-items: center;
       justify-content: center;
     }
-  }
-
-  /* Toast positioning and styling */
-  .toast-container {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 9999;
-  }
-
-  .toast {
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.15);
-    font-weight: 600;
-  }
-
-  .toast.dark-bg {
-    background-color: #1f2937;
-    color: #ffffff;
-  }
-
-  .toast.light-bg {
-    background-color: #ffffff;
-    color: var(--headline);
   }
 
   /* Enhanced tile hover effects */

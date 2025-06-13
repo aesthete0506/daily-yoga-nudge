@@ -183,7 +183,11 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
                     <Button
                       size="sm"
                       onClick={handlePlayPause}
-                      className="bg-orange-600 hover:bg-orange-700 text-white transition-colors rounded-lg"
+                      className="hover:opacity-90 transition-opacity rounded-lg"
+                      style={{ 
+                        backgroundColor: 'rgba(242,98,14,255)', 
+                        color: 'rgba(255,255,255,255)' 
+                      }}
                       disabled={cooldownActive}
                     >
                       {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -191,7 +195,11 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
                     <Button
                       size="sm"
                       onClick={handleRepeat}
-                      className="bg-orange-600 hover:bg-orange-700 text-white transition-colors rounded-lg"
+                      className="hover:opacity-90 transition-opacity rounded-lg"
+                      style={{ 
+                        backgroundColor: 'rgba(242,98,14,255)', 
+                        color: 'rgba(255,255,255,255)' 
+                      }}
                     >
                       <RotateCcw className="h-4 w-4" />
                     </Button>
@@ -227,7 +235,11 @@ const YogaVideoPlayer: React.FC<YogaVideoPlayerProps> = ({
               {showNextButton && (
                 <Button
                   onClick={handleNext}
-                  className="bg-orange-600 hover:bg-orange-700 text-white mt-4 transition-colors rounded-lg"
+                  className="mt-4 transition-opacity hover:opacity-90 rounded-lg"
+                  style={{ 
+                    backgroundColor: 'rgba(242,98,14,255)', 
+                    color: 'rgba(255,255,255,255)' 
+                  }}
                 >
                   Skip to Next
                 </Button>
