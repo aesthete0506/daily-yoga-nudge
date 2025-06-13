@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase, UserDetails, UserJourney, getUserDetails, getUserJourney, saveUserDetails } from '../lib/supabase';
 import { toast } from '@/components/ui/sonner';
@@ -31,6 +30,7 @@ interface YogaContextType {
   logout: () => Promise<void>;
   isLoading: boolean;
   hasCompletedToday: boolean;
+  streakCount: number;
 }
 
 const YogaContext = createContext<YogaContextType | undefined>(undefined);
@@ -50,6 +50,7 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [totalPracticeTime, setTotalPracticeTime] = useState(0);
   const [currentDay, setCurrentDay] = useState(1);
   const [hasCompletedToday, setHasCompletedToday] = useState(false);
+  const [streakCount, setStreakCount] = useState(0);
 
   // Load user data from local storage on initial load
   useEffect(() => {
@@ -89,6 +90,7 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setTotalPosesPracticed(userJourney.total_poses_practiced || 0);
         setTotalPracticeTime(userJourney.total_practice_time || 0);
         setCurrentDay(userJourney.current_day || 1);
+        setStreakCount(userJourney.streak_count || 0);
         
         // Check if user has completed practice today
         const today = new Date().toISOString().split('T')[0];
@@ -208,6 +210,7 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setCurrentStep(0);
     setIsProfileLocked(false);
     setHasCompletedToday(false);
+    setStreakCount(0);
     localStorage.removeItem('userEmail');
     toast.success('You have been logged out');
     return Promise.resolve();
@@ -255,7 +258,8 @@ export const YogaProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       saveUserData,
       logout,
       isLoading,
-      hasCompletedToday
+      hasCompletedToday,
+      streakCount
     }}>
       {children}
     </YogaContext.Provider>
