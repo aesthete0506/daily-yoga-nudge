@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { WeekDay, useYoga } from "@/contexts/YogaContext";
+import { WeekDay } from "@/types/yoga";
+import { useYoga } from "@/contexts/YogaContext";
 import { useState } from "react";
 
 const ScheduleStep = () => {

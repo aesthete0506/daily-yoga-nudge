@@ -42,7 +42,7 @@ export const useYogaActions = ({
       toast.error('Your preferences are locked and cannot be changed');
       return;
     }
-    setPracticeDays(prev => 
+    setPracticeDays((prev: WeekDay[]) => 
       prev.includes(day) 
         ? prev.filter(d => d !== day)
         : [...prev, day]

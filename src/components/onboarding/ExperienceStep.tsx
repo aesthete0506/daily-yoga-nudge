@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ExperienceLevel, SessionDuration, useYoga } from "@/contexts/YogaContext";
+import { ExperienceLevel, SessionDuration } from "@/types/yoga";
+import { useYoga } from "@/contexts/YogaContext";
 import { Clock, Star, Timer } from "lucide-react";
 
 const ExperienceStep = () => {
