@@ -1,4 +1,3 @@
-
 import { toast } from '@/components/ui/sonner';
 import { saveUserDetails, UserDetails } from '../lib/supabase';
 import { ExperienceLevel, SessionDuration, WeekDay } from '../types/yoga';
@@ -42,11 +41,10 @@ export const useYogaActions = ({
       toast.error('Your preferences are locked and cannot be changed');
       return;
     }
-    setPracticeDays((prev: WeekDay[]) => 
-      prev.includes(day) 
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
-    );
+    const newPracticeDays = practiceDays.includes(day) 
+      ? practiceDays.filter(d => d !== day)
+      : [...practiceDays, day];
+    setPracticeDays(newPracticeDays);
   };
 
   const setExperienceLevelWithLock = (level: ExperienceLevel) => {
