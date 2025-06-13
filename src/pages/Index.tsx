@@ -3,10 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import YogaCard from "@/components/YogaCard";
 import OnboardingSteps from "@/components/onboarding/OnboardingSteps";
+import SignInScreen from "@/components/SignInScreen";
 import { useYoga } from "@/contexts/YogaContext";
 
 const Index = () => {
-  const { currentStep, setCurrentStep, isProfileLocked } = useYoga();
+  const { currentStep, setCurrentStep, isProfileLocked, userEmail, setUserEmail } = useYoga();
+
+  const handleSignIn = (email: string) => {
+    setUserEmail(email);
+    setCurrentStep(0); // Move to onboarding after sign-in
+  };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#edf2f5' }}>
@@ -18,18 +24,22 @@ const Index = () => {
 
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-3xl">
-          {currentStep === -1 ? (
+          {!userEmail ? (
+            <YogaCard>
+              <SignInScreen onSignIn={handleSignIn} />
+            </YogaCard>
+          ) : currentStep === -1 ? (
             <YogaCard>
               <div className="text-center space-y-6">
                 <h1 className="text-3xl font-bold text-headline">Welcome to YourDOST Guided Yoga</h1>
-                <p className="text-lg text-normal">
+                <p className="text-lg text-muted-foreground">
                   Ready to build a practice that fits your life? We'll guide you step-by-step.
                 </p>
 
                 <div className="space-y-6 py-4">
                   <div className="space-y-2">
                     <h2 className="text-xl font-semibold text-headline">1. Tell us about yourself</h2>
-                    <p className="text-normal">
+                    <p className="text-muted-foreground">
                       – What's your experience level? (Beginner / Intermediate / Advanced)<br />
                       – How long can you practice each session? (8 min / 15 min / 25 min)
                     </p>
@@ -37,14 +47,14 @@ const Index = () => {
 
                   <div className="space-y-2">
                     <h2 className="text-xl font-semibold text-headline">2. Pick your days</h2>
-                    <p className="text-normal">
+                    <p className="text-muted-foreground">
                       Choose which days of the week you'd like to show up on your mat.
                     </p>
                   </div>
 
                   <div className="space-y-2">
                     <h2 className="text-xl font-semibold text-headline">3. Set a daily reminder</h2>
-                    <p className="text-normal">
+                    <p className="text-muted-foreground">
                       Select a time to receive a gentle nudge—so you never miss a session.
                     </p>
                   </div>
@@ -52,13 +62,13 @@ const Index = () => {
                 
                 <Button 
                   size="lg" 
-                  className="mt-4 btn-primary"
+                  className="mt-4 bg-primary text-white hover:opacity-90 transition-opacity"
                   onClick={() => setCurrentStep(0)}
                 >
                   Let's Begin
                 </Button>
                 
-                <p className="text-normal pt-2">
+                <p className="text-muted-foreground pt-2">
                   Your path to strength, flexibility, and calm awaits.
                 </p>
               </div>
@@ -68,12 +78,12 @@ const Index = () => {
               {isProfileLocked ? (
                 <div className="text-center space-y-4">
                   <h2 className="text-2xl font-bold text-headline">Profile Locked</h2>
-                  <p className="text-normal">
+                  <p className="text-muted-foreground">
                     Your preferences have been saved and locked. You can now access your 30-day journey!
                   </p>
                   <Button 
                     onClick={() => window.location.href = '/dashboard'}
-                    className="btn-primary"
+                    className="bg-primary text-white hover:opacity-90 transition-opacity"
                   >
                     Go to Dashboard
                   </Button>

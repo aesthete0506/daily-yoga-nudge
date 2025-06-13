@@ -8,8 +8,9 @@ import { useYoga } from "@/contexts/YogaContext";
 import PracticePlanDialog from "@/components/PracticePlanDialog";
 import DayPlanDialog from "@/components/DayPlanDialog";
 import { toast } from "@/components/ui/sonner";
-import { CheckCircle, Lock, Play } from 'lucide-react';
+import { CheckCircle, Lock, Play, Calendar } from 'lucide-react';
 import { getDayContent } from "@/lib/supabase";
+import { Progress } from "@/components/ui/progress";
 
 const Dashboard = () => {
   const { 
@@ -22,7 +23,8 @@ const Dashboard = () => {
     totalPracticeTime,
     currentDay,
     hasCompletedToday,
-    userEmail
+    userEmail,
+    streakCount
   } = useYoga();
   
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ const Dashboard = () => {
   const [dayPlanOpen, setDayPlanOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [dayMuscles, setDayMuscles] = useState<Record<number, string>>({});
+  const [weeklyContent, setWeeklyContent] = useState<Record<number, { benefits: string; muscles: string }>>({});
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,25 +42,33 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Load muscle focus data for days
+  // Load weekly content for display
   useEffect(() => {
-    const loadDayData = async () => {
+    const loadWeeklyContent = async () => {
       if (!experienceLevel) return;
       
-      const muscleData: Record<number, string> = {};
-      for (let day = 1; day <= 30; day++) {
+      const contentData: Record<number, { benefits: string; muscles: string }> = {};
+      
+      // Get current week (7 days starting from current day)
+      const startDay = Math.max(1, currentDay - 3);
+      const endDay = Math.min(30, startDay + 6);
+      
+      for (let day = startDay; day <= endDay; day++) {
         const content = await getDayContent(day, experienceLevel);
         if (content.length > 0) {
-          muscleData[day] = content[0].muscles_impacted || 'Full Body';
+          contentData[day] = {
+            benefits: content[0].benefits || 'Strength & Flexibility',
+            muscles: content[0].muscles_impacted || 'Full Body'
+          };
         }
       }
-      setDayMuscles(muscleData);
+      setWeeklyContent(contentData);
     };
     
     if (experienceLevel) {
-      loadDayData();
+      loadWeeklyContent();
     }
-  }, [experienceLevel]);
+  }, [experienceLevel, currentDay]);
 
   // If user hasn't completed onboarding, redirect to home
   useEffect(() => {
@@ -73,14 +83,11 @@ const Dashboard = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h2 className="text-xl font-medium mb-2 text-headline">Loading your dashboard...</h2>
-          <p className="text-normal">Just a moment while we prepare your practice</p>
+          <p className="text-muted-foreground">Just a moment while we prepare your practice</p>
         </div>
       </div>
     );
   }
-
-  // Generate journey cards
-  const journeyCards = Array.from({ length: 30 }, (_, i) => i + 1);
 
   // Format practice time
   const formatPracticeTime = (minutes: number) => {
@@ -112,14 +119,17 @@ const Dashboard = () => {
     return 'locked';
   };
 
-  const getCalendarText = (day: number) => {
-    const status = getDayStatus(day);
-    if (status === 'locked') return 'Unlocking Soon';
-    return dayMuscles[day] || 'Loading...';
-  };
-
   // Check if all 30 days are completed
   const isJourneyComplete = completedDays.length === 30;
+
+  // Get current week tiles (7 days)
+  const getCurrentWeekTiles = () => {
+    const startDay = Math.max(1, currentDay - 3);
+    const endDay = Math.min(30, startDay + 6);
+    return Array.from({ length: endDay - startDay + 1 }, (_, i) => startDay + i);
+  };
+
+  const currentWeekTiles = getCurrentWeekTiles();
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,7 +140,7 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={() => setPracticePlanOpen(true)}
-              className="border-primary text-primary hover:bg-primary hover:text-white"
+              className="border-primary text-primary hover:bg-primary hover:text-white hover:opacity-90"
             >
               Your Practice Plan
             </Button>
@@ -142,47 +152,47 @@ const Dashboard = () => {
         {isJourneyComplete ? (
           <div className="text-center mb-8 p-8 bg-white rounded-lg shadow-sm">
             <h1 className="text-4xl font-bold mb-4 text-headline">🎉 Congratulations! 🎉</h1>
-            <p className="text-xl text-normal">You did it! 30 Days Completed. Keep going strong.</p>
+            <p className="text-xl text-muted-foreground">You did it! 30 Days Completed. Keep going strong.</p>
           </div>
         ) : (
-          <h1 className="text-3xl font-bold mb-8 text-headline">Your 30-Day Yoga Journey</h1>
+          <h1 className="text-3xl font-bold mb-8 text-headline">My Yoga Journey</h1>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="p-6 bg-white shadow-sm border-0">
-            <h2 className="text-xl font-semibold mb-4 text-headline">Progress Stats</h2>
+            <h2 className="text-lg font-semibold mb-4 text-headline">Progress Stats</h2>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-normal">Current Day</p>
+                <p className="text-sm text-muted-foreground">Current Day</p>
                 <p className="font-medium text-headline">Day {currentDay}</p>
               </div>
               <div>
-                <p className="text-sm text-normal">Days Completed</p>
+                <p className="text-sm text-muted-foreground">Days Completed</p>
                 <p className="font-medium text-headline">{completedDays.length} / 30</p>
               </div>
               <div>
-                <p className="text-sm text-normal">Total Poses Practiced</p>
+                <p className="text-sm text-muted-foreground">Poses Practiced</p>
                 <p className="font-medium text-headline">{totalPosesPracticed}</p>
               </div>
               <div>
-                <p className="text-sm text-normal">Total Practice Time</p>
+                <p className="text-sm text-muted-foreground">Practice Time</p>
                 <p className="font-medium text-headline">{formatPracticeTime(totalPracticeTime)}</p>
               </div>
             </div>
           </Card>
 
           <Card className="p-6 bg-primary text-white shadow-sm border-0">
-            <h2 className="text-xl font-semibold mb-4 text-white">Today's Practice</h2>
-            <p className="mb-6 text-white">
+            <h2 className="text-lg font-semibold mb-4 text-white">Today's Practice</h2>
+            <p className="mb-6 text-white text-sm">
               {isJourneyComplete ? (
                 'Journey Complete!'
               ) : (
-                `Day ${currentDay} - ${dayMuscles[currentDay] ? `Working on: ${dayMuscles[currentDay]}` : 'Your personalized yoga session is ready!'}`
+                `Day ${currentDay} - ${weeklyContent[currentDay]?.muscles || 'Ready for practice!'}`
               )}
             </p>
             <Button 
               variant="secondary" 
-              className="w-full bg-white text-primary border-0 hover:bg-gray-100"
+              className="w-full bg-white text-primary border-0 hover:bg-gray-100 hover:opacity-90"
               onClick={() => handleDayClick(currentDay)}
               disabled={hasCompletedToday || isJourneyComplete}
             >
@@ -191,51 +201,65 @@ const Dashboard = () => {
           </Card>
 
           <Card className="p-6 bg-white shadow-sm border-0">
-            <h2 className="text-xl font-semibold mb-4 text-headline">Journey Progress</h2>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-normal">Completion</span>
-                <span className="text-headline">{Math.round((completedDays.length / 30) * 100)}%</span>
+            <h2 className="text-lg font-semibold mb-4 text-headline">Journey Progress</h2>
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-headline">{Math.round((completedDays.length / 30) * 100)}%</div>
+                <p className="text-sm text-muted-foreground">Complete</p>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="h-2 rounded-full transition-all duration-300 bg-primary" 
-                  style={{ width: `${(completedDays.length / 30) * 100}%` }}
-                ></div>
-              </div>
+              <Progress value={(completedDays.length / 30) * 100} className="h-2" />
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-white shadow-sm border-0">
+            <h2 className="text-lg font-semibold mb-4 text-headline">Current Streak</h2>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary mb-2">🔥</div>
+              <div className="text-2xl font-bold text-headline">{streakCount || 0}</div>
+              <p className="text-sm text-muted-foreground">Days in a row</p>
             </div>
           </Card>
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4 text-headline">30-Day Journey Calendar</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-4">
-            {journeyCards.map((day) => {
+          <h2 className="text-xl font-semibold mb-4 text-headline">This Week's Plan</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+            {currentWeekTiles.map((day) => {
               const status = getDayStatus(day);
               const isCompleted = completedDays.includes(day);
               const isAvailable = status === 'available';
               const isLocked = status === 'locked';
+              const content = weeklyContent[day];
               
               return (
                 <Card 
                   key={day} 
-                  className={`p-4 h-24 cursor-pointer transition-all bg-white shadow-sm border-0 hover:shadow-md ${
+                  className={`p-4 h-32 cursor-pointer transition-all bg-white shadow-sm border-0 hover:shadow-md hover:opacity-90 ${
                     isCompleted ? 'ring-2 ring-green-500' : isLocked ? 'opacity-60' : 'hover:ring-2 hover:ring-primary'
                   }`}
                   onClick={() => handleDayClick(day)}
                 >
                   <div className="flex flex-col h-full justify-between">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium text-headline">Day {day}</h3>
-                      {isCompleted && <CheckCircle className="h-5 w-5 text-green-500" />}
-                      {isLocked && <Lock className="h-4 w-4 text-gray-400" />}
-                      {isAvailable && !isCompleted && <Play className="h-4 w-4 text-primary" />}
+                      <h3 className="font-medium text-headline text-sm">Day {day}</h3>
+                      {isCompleted && <CheckCircle className="h-4 w-4 text-green-500" />}
+                      {isLocked && <Lock className="h-3 w-3 text-gray-400" />}
+                      {isAvailable && !isCompleted && <Play className="h-3 w-3 text-primary" />}
                     </div>
                     
-                    <div className="text-xs text-normal">
-                      <p className="font-medium text-headline">
-                        {getCalendarText(day)}
-                      </p>
+                    <div className="text-xs space-y-1">
+                      {isLocked ? (
+                        <p className="text-muted-foreground font-medium">Coming Soon</p>
+                      ) : (
+                        <>
+                          <p className="text-primary font-medium truncate">
+                            {content?.benefits || 'Strength & Balance'}
+                          </p>
+                          <p className="text-muted-foreground truncate">
+                            {content?.muscles || 'Full Body'}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </Card>

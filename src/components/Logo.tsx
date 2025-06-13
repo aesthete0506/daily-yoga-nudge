@@ -3,7 +3,7 @@ export const Logo = () => {
   return (
     <div className="flex items-center gap-2">
       <img 
-        src="https://resources.yourdost.com/Required%20Links/Image29.png" 
+        src="https://d2w4fhi5bhd90e.cloudfront.net/new-appointment-flow/yd-logo.png" 
         alt="YourDOST Logo" 
         className="h-8 w-auto"
         onError={(e) => {

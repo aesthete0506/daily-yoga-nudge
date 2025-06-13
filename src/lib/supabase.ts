@@ -25,6 +25,17 @@ export const supabase = createClient(
   }
 );
 
+// IST timezone helper
+const IST_OFFSET = '+05:30';
+
+export const getISTTime = () => {
+  return new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+};
+
+export const getISTDate = () => {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+};
+
 // Database types for new schema
 export type UserDetails = {
   email: string;
@@ -47,6 +58,7 @@ export type ContentLibrary = {
   video_duration?: number; // in seconds
   benefits?: string;
   muscles_impacted?: string;
+  pose_steps?: string[];
 };
 
 // Updated VideoFile type with all necessary properties
@@ -66,6 +78,7 @@ export type UserJourney = {
   current_day: number;
   journey_start_date?: string;
   last_practice_date?: string;
+  streak_count?: number;
 };
 
 // Get content for a specific day and experience level
@@ -179,7 +192,10 @@ export const saveUserDetails = async (userDetails: UserDetails): Promise<boolean
   try {
     const { error } = await supabase
       .from('user_details')
-      .upsert(userDetails);
+      .upsert({
+        ...userDetails,
+        created_at: getISTTime()
+      });
     
     if (error) {
       console.error('Error saving user details:', error);
@@ -193,7 +209,25 @@ export const saveUserDetails = async (userDetails: UserDetails): Promise<boolean
   }
 };
 
-// Complete a day (calls the database function)
+// Calculate streak based on IST timezone
+const calculateStreak = (lastPracticeDate: string | null, currentDate: string): number => {
+  if (!lastPracticeDate) return 1;
+  
+  const last = new Date(lastPracticeDate + 'T00:00:00+05:30');
+  const current = new Date(currentDate + 'T00:00:00+05:30');
+  const diffTime = Math.abs(current.getTime() - last.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 1) {
+    return 1; // Will be incremented in completeDay function
+  } else if (diffDays > 1) {
+    return 1; // Reset streak
+  }
+  
+  return 1; // Same day practice
+};
+
+// Complete a day with streak tracking using IST
 export const completeDay = async (
   userEmail: string, 
   dayNumber: number, 
@@ -201,6 +235,26 @@ export const completeDay = async (
   practiceMinutes: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
+    const currentDate = getISTDate();
+    
+    // Get current journey to calculate streak
+    const currentJourney = await getUserJourney(userEmail);
+    let newStreak = 1;
+    
+    if (currentJourney) {
+      const daysSinceLastPractice = currentJourney.last_practice_date 
+        ? Math.abs(new Date(currentDate).getTime() - new Date(currentJourney.last_practice_date).getTime()) / (1000 * 60 * 60 * 24)
+        : 0;
+        
+      if (daysSinceLastPractice <= 1 && currentJourney.last_practice_date !== currentDate) {
+        newStreak = (currentJourney.streak_count || 0) + 1;
+      } else if (daysSinceLastPractice > 1) {
+        newStreak = 1;
+      } else {
+        newStreak = currentJourney.streak_count || 1;
+      }
+    }
+
     const { error } = await supabase.rpc('complete_day', {
       user_email: userEmail,
       day_number: dayNumber,
@@ -212,6 +266,15 @@ export const completeDay = async (
       console.error('Error completing day:', error);
       return { success: false, error: error.message };
     }
+    
+    // Update streak separately
+    await supabase
+      .from('user_journey')
+      .update({ 
+        streak_count: newStreak,
+        last_practice_date: currentDate
+      })
+      .eq('email', userEmail);
     
     return { success: true };
   } catch (error) {

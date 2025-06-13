@@ -7,24 +7,24 @@
 @layer base {
   :root {
     --background: #edf2f5;
-    --foreground: #4c3f68;
+    --foreground: #615e85;
     --card: #ffffff;
-    --card-foreground: #4c3f68;
+    --card-foreground: #615e85;
     --popover: #ffffff;
-    --popover-foreground: #4c3f68;
-    --primary: #4c3f68;
+    --popover-foreground: #615e85;
+    --primary: #615e85;
     --primary-foreground: #ffffff;
-    --secondary: #cdcbcf;
-    --secondary-foreground: #4c3f68;
-    --muted: #cdcbcf;
-    --muted-foreground: #4c3f68;
-    --accent: #cdcbcf;
-    --accent-foreground: #4c3f68;
+    --secondary: #5d5d5d;
+    --secondary-foreground: #615e85;
+    --muted: #5d5d5d;
+    --muted-foreground: #5d5d5d;
+    --accent: #5d5d5d;
+    --accent-foreground: #615e85;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: #cdcbcf;
+    --border: #e5e5e5;
     --input: #ffffff;
-    --ring: #4c3f68;
+    --ring: #615e85;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -32,33 +32,35 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
     
-    /* Custom color variables */
-    --headline: #4c3f68;
-    --normal: #cdcbcf;
-    --btn-primary: #4c3f68;
+    /* Custom color variables - Updated color scheme */
+    --headline: #615e85;  /* rgba(97,78,133,255) */
+    --normal: #5d5d5d;    /* rgba(93,93,93,255) */
+    --btn-primary: #615e85;
     --btn-text: #ffffff;
+    --btn-practice: #f2620e; /* rgba(242,98,14,255) for practice buttons */
+    --btn-practice-text: #ffffff;
   }
 
   .dark {
     --background: #edf2f5;
-    --foreground: #4c3f68;
+    --foreground: #615e85;
     --card: #ffffff;
-    --card-foreground: #4c3f68;
+    --card-foreground: #615e85;
     --popover: #ffffff;
-    --popover-foreground: #4c3f68;
-    --primary: #4c3f68;
+    --popover-foreground: #615e85;
+    --primary: #615e85;
     --primary-foreground: #ffffff;
-    --secondary: #cdcbcf;
-    --secondary-foreground: #4c3f68;
-    --muted: #cdcbcf;
-    --muted-foreground: #4c3f68;
-    --accent: #cdcbcf;
-    --accent-foreground: #4c3f68;
+    --secondary: #5d5d5d;
+    --secondary-foreground: #615e85;
+    --muted: #5d5d5d;
+    --muted-foreground: #5d5d5d;
+    --accent: #5d5d5d;
+    --accent-foreground: #615e85;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: #cdcbcf;
+    --border: #e5e5e5;
     --input: #ffffff;
-    --ring: #4c3f68;
+    --ring: #615e85;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -100,24 +102,35 @@
     opacity: 0.9;
   }
   
+  .btn-practice {
+    background-color: var(--btn-practice);
+    color: var(--btn-practice-text);
+  }
+  
+  .btn-practice:hover {
+    background-color: var(--btn-practice);
+    opacity: 0.9;
+  }
+  
   .card {
     background-color: var(--card);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.08);
     border: none;
   }
   
   .day-tile {
     padding: 1rem;
-    height: 6rem;
+    height: 8rem;
     background-color: var(--card);
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.08);
     border: none;
     border-radius: 0.5rem;
     transition: all 0.2s ease-in-out;
   }
   
   .day-tile:hover {
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    box-shadow: 0 4px 12px 0 rgb(0 0 0 / 0.12);
+    opacity: 0.9;
   }
   
   .day-tile.completed {
@@ -127,4 +140,32 @@
   .day-tile.locked {
     opacity: 0.6;
   }
+
+  /* Smooth transitions for mobile */
+  @media (max-width: 768px) {
+    .main-content {
+      scroll-behavior: smooth;
+    }
+    
+    .mobile-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+/* Custom button hover effects */
+.custom-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.custom-button:active {
+  transform: translateY(0);
 }

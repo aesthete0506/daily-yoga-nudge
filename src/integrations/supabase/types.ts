@@ -17,6 +17,7 @@ export type Database = {
           experience_level: string
           id: string
           muscles_impacted: string | null
+          pose_steps: string[] | null
           video_duration: number | null
           video_url: string
         }
@@ -27,6 +28,7 @@ export type Database = {
           experience_level: string
           id?: string
           muscles_impacted?: string | null
+          pose_steps?: string[] | null
           video_duration?: number | null
           video_url: string
         }
@@ -37,6 +39,7 @@ export type Database = {
           experience_level?: string
           id?: string
           muscles_impacted?: string | null
+          pose_steps?: string[] | null
           video_duration?: number | null
           video_url?: string
         }
@@ -76,6 +79,7 @@ export type Database = {
           email: string
           journey_start_date: string | null
           last_practice_date: string | null
+          streak_count: number | null
           total_poses_practiced: number | null
           total_practice_time: number | null
         }
@@ -85,6 +89,7 @@ export type Database = {
           email: string
           journey_start_date?: string | null
           last_practice_date?: string | null
+          streak_count?: number | null
           total_poses_practiced?: number | null
           total_practice_time?: number | null
         }
@@ -94,6 +99,7 @@ export type Database = {
           email?: string
           journey_start_date?: string | null
           last_practice_date?: string | null
+          streak_count?: number | null
           total_poses_practiced?: number | null
           total_practice_time?: number | null
         }
